@@ -1,0 +1,333 @@
+---
+title: "Life Tables"
+output: learnr::tutorial
+bibliography: library.bib
+markdown_extensions:
+    - admonition  
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library("lifecontingencies")
+tutorial_options(exercise.timelimit = 60)
+knitr::opts_knit$set(root.dir = getwd()) 
+```
+
+## Introduction
+
+In this tutorial we aim to discuss the implementation of life table  computations using the package **lifecontingencies** [@Spedicato2013].
+
+The **lifecontingencies** package is the main `R` package available for performing standard financial and actuarial mathematics calculations. In this section we aim to introduce the use of this package for performing life table calculations. If you are interested in the wider use of this package please refer to Chapter 7 of the book by @Charpentier2014.
+
+Note that the **lifecontingencies** package has been loaded in the current R workspace. Therefore you can utilise the capacities of the package without explicitly loading it.
+
+## Creating a life table - Method I
+
+In **lifecontingencies** there are several approaches for creating a life table. The first one is by inputting directly the $l_x$. 
+
+**Example**. if we consider $l_0 = 120, l_1 = 119, l_2 = 118, \ldots, l_{120} = 0$, we can create a life table with the following steps:
+
+
+```{r lt,cache=TRUE}
+## create a life table
+x <- 0:120 # create a vector Xof ages, that is, integers from 0 to 120
+lx <- 120:0 # create lx, that is, a vector from 120 to 0
+names(lx) <- x # name each element of lx by using $x
+
+# create a life table LT1 by using the new function,
+# which generates a lifetableclass object in R
+LT1 <- new("lifetable", x = x, lx = lx, name="Sample life table 1")
+```
+
+
+We can create a plot of $l_x$ with the following code:
+
+```{r}
+# plot LT1 by using the plot() function
+plot(LT1, type="l")
+
+# plot LT1 by using the plot() function with specifications
+plot(LT1@x,LT1@lx,lwd=2,col="red",type="l",xlab="Age",ylab="lx", main = "lx vs x")
+```
+
+**Exercise**
+
+```{r disdist, echo=FALSE}
+question("Can you see what distribution we are assuming for the future life time T?",
+  answer("Weibull distribution",message = "The Weibull distribution is a candidate for life time models; however, in this case lx decreases linearly throught time which means T doesn't follow a Weibull distribution."),
+  answer("Exponential distribution (constant force of mortality)", message = "The exponential distribution has a constant force of mortality. Since lx decreases linearly through ages, the mortality rate increases."),
+  answer("The future lifetime is uniformly distributed.", correct = TRUE),
+  allow_retry = TRUE
+)
+```
+
+Having created a life table we can easily compute survival probabilities and death probabilities with the function `pxt`, `qxt`. 
+
+**Example**. Assume a survival function $S(x)=1-\frac x{120}$. One can find the value for the survival probability, ${}_2p_{50}$, by using the following codes:
+
+```{r}
+# by using lx
+lx["52"]/lx["50"]
+# by using the pxt function
+pxt(LT1,x = 50, t = 2) 
+```
+
+Similarly, one can use find out the value for the death probability, $_{10}q_{75}$, by using the following codes:
+
+```{r}
+# by using lx
+1 - lx["85"]/lx["75"]
+# by using the qxt function
+qxt(LT1,x = 75, t = 10)
+```
+
+We can also compute life expectancies with the function `exn`. 
+
+**Example**. The complete life expectancy and curtate life expectancy at birth implied by the `LT1` life table are:
+
+```{r}
+# complete life expectancy at birth
+exn(LT1, x = 0, type = "complete")
+
+# curtate life expectancy at birth
+exn(LT1, x = 0, type = "curtate")
+```
+
+**Exercise**. 
+
+```{r dislife, echo=FALSE}
+question("Which one of the following statements about lifetimes and life expectancies is correct?",
+  answer("The complete expectancy of life computes the expected value of the interger part of the lifetime.",message = "The complete expectancy of life computes the expected value of the lifetime."),
+  answer("The curtate life expectancy refers to the expected value of the lifetime.", message = "The curtate life expectancy refers to the expected value of the interger part of the lifetime."),
+  answer("The curtate lifetime is always larger or equal to the exact lifetime.", message = "The curtate lifetime is always smaller or equal to the exact lifetime. This is because the integer part of the lifetime is always smaller or equal to the exact lifetime."),
+  answer("The curtate life expectancy is always smaller or equal to the complete life expectancy.",correct = TRUE),
+  allow_retry = TRUE
+)
+```
+
+
+**Exercise** Compute the value of $p_{50}$ based on the life table LT1.
+
+
+```{r ltprob,exercise=TRUE, exercise.lines = 6}
+# by using lx
+
+
+# by using a built-in function of the package
+
+
+```
+
+```{r ltprob-hint-1, cache=TRUE}
+# Note that this is a one-year survival probability,
+# hence one can use the pxt function.
+```
+
+
+```{r ltprob-hint-2,cache=TRUE}
+# by using lx
+lx["51"]/lx["50"]
+
+# by using the built-in function of the package
+pxt(LT1,x = 50, t = 1)
+
+```
+
+
+## Creating a life table - Method II
+
+An alternative way for creating a life table is from one year death/survival probabilities using the convenience function `probs2lifetable`. To illustrate this, consider the data on one-year death probabilities from the French population in the file "FrenchTable.csv" avalible in the course website. We can create a life table as follows: 
+
+```{r}
+# Read the csv file
+FTqx <- read.csv("FrenchTable.csv")
+
+# Read the first few lines of the file
+head(FTqx)
+
+# Display the ages
+FTqx$Age
+
+# Create the life table
+FLT <- probs2lifetable(probs = FTqx$qx, type = "qx", radix = 100000, name = "French LT")
+
+# Create a summary of the life table
+summary(FLT)
+```
+
+The `read.csv` function permits the reading of Excel data in csv format. Note that the  variable `FTqx` is a dataframe which is a data type similar in spirit to a database (named columns, distinct type). Columns in a dataframe can be accessed with the `$` symbol (e.g. `FTqx$Age`).
+
+**Example**. Plot the $l_x$ for the French life table: 
+
+```{r}
+# plot the life table 
+plot(FLT, type="l")
+
+```
+
+
+**Example:** Do a plot of $q_x$ and $d_x$ for the French life table.
+
+```{r}
+# Plot of q_x vs x 
+# Plot of q_x vs x 
+plot(FTqx$Age, FTqx$qx, type = "l", xlab="Age",ylab="qx", main = "qx vs x")
+plot(FTqx$Age, log(FTqx$qx), type = "l", xlab="Age",ylab="log(qx)", main = "qx vs x")
+
+
+# Plot of d_x vs x
+dxt(FLT, 0)
+dx <- function(x) dxt(FLT, x)
+dx_vec <- Vectorize(dx)
+plot(FLT@x,dx_vec(FLT@x),type="l",xlab="Age",ylab="dx", main = "dx vs x")
+```
+
+In the above code we note the use of the function `Vectorize` which enables the vectorisation of scalar functions.
+
+**Exercise:** Use the French life table to answer the following questions.
+
+- Compute ${}_{5|5}q_{60}$
+- How does $\stackrel{\circ}{e}_{0}$ compare to $\stackrel{\circ}{e}_{65}$ + 65? Which quantity is bigger and why? 
+
+
+```{r french2,exercise=TRUE, exercise.lines = 9}
+# Part 1.
+
+
+# Part 2.
+
+
+
+```
+
+```{r french2-hint-1,cache=TRUE}
+# Part 1.
+# you need to compute the multiplication of two probabilities
+
+# Part 2.
+# you can use the exn function to compute the life expectancies
+
+## The solutions are included in the next hint page
+```
+
+```{r french2-hint-2,cache=TRUE}
+#Part 1.
+pxt(FLT, x = 60, t = 5) * qxt(FLT, x = 65, t = 5) 
+
+#Part  2
+exn(FLT, 65, type = "complete")
+exn(FLT, 65, type = "complete") + 65
+exn(FLT, 0, type = "complete")
+```
+
+## Assumptions for non-integer ages
+
+The **lifecontingencies** package allows the evaluation of survival probabilities at fractional intervals, using different kinds of interpolation approaches. 
+
+**Example:** Using the French Life Table calculate ${}_{0.6}p_{80}$ under:
+
+- the assumption of uniform distribution of deaths (linear interpolation).
+
+```{r}
+pxt(FLT, x = 80, t = 0.6, fractional = "linear") 
+```
+
+- the assumption of constant force of mortality.
+
+```{r}
+pxt(FLT, x = 80, t = 0.6, fractional = "constant force") 
+
+```
+
+- the Balducci assumption (hyperbolic interpolation).
+
+```{r}
+pxt(FLT, x = 80, t = 0.6, fractional = "hyperbolic") 
+```
+
+**Exercise**  Using the French Life Table, calculate ${}_{0.4}q_{80}$ with the Balduccci assumption.
+
+
+```{r frac,exercise=TRUE, exercise.lines = 5}
+# type down the solution here
+
+
+```
+
+
+```{r frac-hint-1,cache=TRUE}
+# note that you should use the qxt function
+# while specify the argument fractional as "hyperbolic"
+
+## The solutions are included in the next page.
+```
+
+```{r frac-hint-2,cache=TRUE}
+qxt(FLT, x = 80, t = 0.4, fractional = "hyperbolic") 
+```
+
+
+## Mini-assignment
+
+### Basics of R and using ED forum for completing mini-assignment
+
+- Create a variable $t1$ in R that equals to $(4\times 3\times 2\times 1)^2$
+
+- In the built-in R package datasets, the dataset **ldeaths** includes 72 data points that correspond to the monthly deaths from bronchitis, emphysema and asthma in the UK from 1974 to 1979 (of both sexes). Based on the dataset **ldeaths**, perform the following tasks:
+    - Compute the average number of monthly deaths; store this number a variable called ave_death.
+    - Compute the maximum number of death; store this number is a variable called max_death.
+    - Plot the number of deaths against time by using the plot function. 
+
+```{r}
+t1<-(factorial(4))^2
+t1
+
+ave_death<-mean(ldeaths)
+ave_death
+
+max_death<-max(ldeaths)
+max_death
+
+plot(ldeaths)
+```
+
+
+
+### Life Table
+
+Use the demoJapan (Japan Mortality Rates for life table construction) of the **lifecontigencies package**, perform the following tasks
+
+- construct a life table object in R for female in Japan according to the death probabilities in demoJapan;
+
+- calculate the complete life expectancies at age 55 based on the life table; save this number to a variable named exn_55;
+
+- calculate the probability that an aged 78 survives for 9 months and dies before turning 79; you should make the Balducci assumption; save this number to a variable named prob_78;
+
+- plot the $l_x$ in the life table.
+
+Hint: the dataset can be loaded by using data(AF92Lt). Once one executes the command data(demoJapan), the dataset is stored in the object demoJapan.
+
+```{r}
+data(demoJapan)
+
+MT_japan<-probs2lifetable(probs=demoJapan$JP8587F,radix=100000,"qx",name="demoJapan")
+
+exn_55<-exn(MT_japan, 55, type = "complete") + 55
+
+# surviving from 78 to 78.75
+pxt_78_frac<-pxt(MT_japan, x = 78, t = 0.75, fractional = "hyperbolic") 
+
+# surviving from 78 to 79
+pxt_78_int<-pxt(MT_japan, x = 78, t = 1)
+
+# surviving prob from 78 to 78.75 times (1-surviving prob from 78.75 to 79)
+prob_78<-pxt_78_frac*(1-pxt_78_int/pxt_78_frac)
+  
+plot(MT_japan, type="l")
+```
+
+
+
+
+## References

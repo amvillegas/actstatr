@@ -1,0 +1,13 @@
+Package: actstatr
+Type: Package
+Title: R Tutorials for Actuarial Statisics 
+Version: 0.1.0
+Authors@R: person("Andres", "Villegas", email = "andresmauriciovillegas@gmail.com",
+  role = c("aut", "cre"))
+Maintainer: Andres Villegas <andresmauriciovillegas@gmail.com>
+Description: An R package bundling learnr tutuorials for actuarial statisitics. 
+License: GPL (>= 2)
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    lifecontingencies
