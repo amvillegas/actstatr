@@ -41,7 +41,7 @@ z = x * y
 z
 ```
 
-The code above also illustrates that value can alos be assgned using the `=` sign. However, from now on and for the sake of consistency, we will always use `<-` for variable assignments.
+The code above also illustrates that value can also be assigned using the `=` sign. However, from now on and for the sake of consistency, we will always use `<-` for variable assignments.
 
 
 
@@ -144,7 +144,7 @@ We can index vectors in several ways. For instance the code below illustrates so
 vec1[1]
 vec1[-1]
 ```
-The first line extracts the first element of the vectore while the second line all **but** the first element of the vector.
+The first line extracts the first element of the vector while the second line all **but** the first element of the vector.
 
 There are some more complicated ways to index vectors in `R`. To illustrate this code below creates a vector $vec2 = (1, 3, 4, 10, 15, 20, 50, 1, 6)$ and performs some operations:
 
@@ -219,7 +219,7 @@ vec2[c(2, 4)]
 ```
 
 
-2. Compute the sum of the average of the first five elment of  the vector 
+2. Compute the sum of the average of the first five element of  the vector 
 
 ```{r vecex2,exercise=TRUE,exercise.lines=4, exercise.setup = "prepare-vecex"}
 
@@ -260,7 +260,7 @@ vec3[vec3<=10]
 
 ## Functions
 
-We have used so far several `R` functions. If you are unsure abou what a particular function does you can get some help using either `help` or `?`. For instance,
+We have used so far several `R` functions. If you are unsure about what a particular function does you can get some help using either `help` or `?`. For instance,
 
 ```{r, eval=FALSE}
 ?sd
@@ -293,7 +293,7 @@ pow(2, 3)
 pow(1:10, 3)
 ```
 
-Note that in the defintion of the  function `p=2` means that `p`  is equal to 2 by default. Therefore `pow(2, 2)` returns the same value as `pow(2)`.
+Note that in the definition of the  function `p=2` means that `p`  is equal to 2 by default. Therefore `pow(2, 2)` returns the same value as `pow(2)`.
 
 ```{r}
 pow(2, 2)
@@ -308,7 +308,7 @@ pow
 
 ### Exercise
 
-Now complete the following code to create a function that calculates the effective annual interst rate, $i$, given the nominal annual interest rate (monthly compounding), $j$. The default value is $i=0.05$. The fomula is $j=(i/12)^{12} - 1$.
+Now complete the following code to create a function that calculates the effective annual interest rate, $i$, given the nominal annual interest rate (monthly compounding), $j$. The default value is $i=0.05$. The formula is $j=(i/12)^{12} - 1$.
 
 ```{r func,exercise=TRUE,exercise.lines=12}
 j<-function(i){# note you need to specify the default value
