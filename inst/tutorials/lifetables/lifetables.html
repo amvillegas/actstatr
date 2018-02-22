@@ -46,18 +46,21 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 <div id="section-introduction" class="section level2">
 <h2>Introduction</h2>
-<p>In this tutorial we aim to discuss the implementation of life table computations using the package <strong>lifecontingencies</strong> <span class="citation">(Spedicato 2013)</span>.</p>
-<p>The <strong>lifecontingencies</strong> package is the main <code>R</code> package available for performing standard financial and actuarial mathematics calculations. In this section we aim to introduce the use of this package for performing life table calculations. If you are interested in the wider use of this package please refer to Chapter 7 of the book by <span class="citation">Charpentier (2014)</span>.</p>
-<p>Note that the <strong>lifecontingencies</strong> package has been loaded in the current R workspace. Therefore you can utilise the capacities of the package without explicitly loading it.</p>
+<p>In this tutorial we aim to discuss the implementation of life table computations using the package <code>lifecontingencies</code> <span class="citation">(Spedicato 2013)</span>.</p>
+<p>The <code>lifecontingencies</code> package is the main <code>R</code> package available for performing standard financial and actuarial mathematics calculations. In this tutorial we focus on the use of this package for performing life table calculations. If you are interested in the wider use of this package please refer to Chapter 7 of the book by <span class="citation">Charpentier (2014)</span>.</p>
+<p>Note that the <code>lifecontingencies</code> package has been loaded in the current <code>R</code> workspace. Therefore you can utilise the capacities of the package without explicitly loading it. However, if you are using the package outside this tutorial remember to first install the package with the code:</p>
+<pre class="r"><code>install.packages(&quot;lifecontingencies&quot;, dependencies = TRUE)</code></pre>
+<p>And the load it with the instruction</p>
+<pre class="r"><code>library(&quot;lifecontingencies&quot;)</code></pre>
 </div>
 <div id="section-creating-a-life-table---method-i" class="section level2">
 <h2>Creating a life table - Method I</h2>
-<p>In <strong>lifecontingencies</strong> there are several approaches for creating a life table. The first one is by inputting directly the <span class="math inline">\(l_x\)</span>.</p>
-<p><strong>Example</strong>. if we consider <span class="math inline">\(l_0 = 120, l_1 = 119, l_2 = 118, \ldots, l_{120} = 0\)</span>, we can create a life table with the following steps:</p>
+<p>In <code>lifecontingencies</code> there are several approaches for creating a life table. The first one is by inputting directly the <span class="math inline">\(l_x\)</span>.</p>
+<p>For example, if we consider <span class="math inline">\(l_0 = 120, l_1 = 119, l_2 = 118, \ldots, l_{120} = 0\)</span>, we can create a life table with the following steps:</p>
 <pre class="r"><code>## create a life table
-x &lt;- 0:120 # create a vector Xof ages, that is, integers from 0 to 120
+x &lt;- 0:120 # create a vector X of ages, that is, integers from 0 to 120
 lx &lt;- 120:0 # create lx, that is, a vector from 120 to 0
-names(lx) &lt;- x # name each element of lx by using $x
+names(lx) &lt;- x #name each element of lx by using x
 
 # create a life table LT1 by using the new function,
 # which generates a lifetableclass object in R
@@ -65,21 +68,22 @@ LT1 &lt;- new(&quot;lifetable&quot;, x = x, lx = lx, name=&quot;Sample life tabl
 <p>We can create a plot of <span class="math inline">\(l_x\)</span> with the following code:</p>
 <pre class="r"><code># plot LT1 by using the plot() function
 plot(LT1, type=&quot;l&quot;)</code></pre>
-<p><img src="lifetables_files/figure-html4/unnamed-chunk-1-1.png" width="624" /></p>
+<p><img src="lifetables_files/figure-html4/unnamed-chunk-3-1.png" width="624" /></p>
+<p>Or alternatively:</p>
 <pre class="r"><code># plot LT1 by using the plot() function with specifications
 plot(LT1@x,LT1@lx,lwd=2,col=&quot;red&quot;,type=&quot;l&quot;,xlab=&quot;Age&quot;,ylab=&quot;lx&quot;, main = &quot;lx vs x&quot;)</code></pre>
-<p><img src="lifetables_files/figure-html4/unnamed-chunk-1-2.png" width="624" /></p>
+<p><img src="lifetables_files/figure-html4/unnamed-chunk-4-1.png" width="624" /></p>
 <p><strong>Exercise</strong></p>
 <pre><code>## PhantomJS not found. You can install it with webshot::install_phantomjs(). If it is installed, please make sure the phantomjs executable can be found via the PATH variable.</code></pre>
 
-<div id="htmlwidget-ccebf14bf43df98d89d5" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-35c73dd4b69acc185085" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-ccebf14bf43df98d89d5">{"x":{"question":"Can you see what distribution we are assuming for the future life time T?","answers":[{"option":"Weibull distribution","correct":false,"message":"The Weibull distribution is a candidate for life time models; however, in this case lx decreases linearly throught time which means T doesn&#39;t follow a Weibull distribution."},{"option":"Exponential distribution (constant force of mortality)","correct":false,"message":"The exponential distribution has a constant force of mortality. Since lx decreases linearly through ages, the mortality rate increases."},{"option":"The future lifetime is uniformly distributed.","correct":true,"message":null}],"label":"disdist","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Can you see what distribution we are assuming for the future life time T?","a":[{"option":"Weibull distribution","correct":false,"message":"The Weibull distribution is a candidate for life time models; however, in this case lx decreases linearly throught time which means T doesn&#39;t follow a Weibull distribution."},{"option":"Exponential distribution (constant force of mortality)","correct":false,"message":"The exponential distribution has a constant force of mortality. Since lx decreases linearly through ages, the mortality rate increases."},{"option":"The future lifetime is uniformly distributed.","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-35c73dd4b69acc185085">{"x":{"question":"Can you see what distribution we are assuming for the future life time T?","answers":[{"option":"Weibull distribution","correct":false,"message":"The Weibull distribution is a candidate for life time models; however, in this case lx decreases linearly throught time which means T doesn&#39;t follow a Weibull distribution."},{"option":"Exponential distribution (constant force of mortality)","correct":false,"message":"The exponential distribution has a constant force of mortality. Since lx decreases linearly through ages, the mortality rate increases."},{"option":"The future lifetime is uniformly distributed.","correct":true,"message":null}],"label":"disdist","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Can you see what distribution we are assuming for the future life time T?","a":[{"option":"Weibull distribution","correct":false,"message":"The Weibull distribution is a candidate for life time models; however, in this case lx decreases linearly throught time which means T doesn&#39;t follow a Weibull distribution."},{"option":"Exponential distribution (constant force of mortality)","correct":false,"message":"The exponential distribution has a constant force of mortality. Since lx decreases linearly through ages, the mortality rate increases."},{"option":"The future lifetime is uniformly distributed.","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 <p>Having created a life table we can easily compute survival probabilities and death probabilities with the function <code>pxt</code>, <code>qxt</code>.</p>
 <p><strong>Example</strong>. Assume a survival function <span class="math inline">\(S(x)=1-\frac x{120}\)</span>. One can find the value for the survival probability, <span class="math inline">\({}_2p_{50}\)</span>, by using the following codes:</p>
 <pre class="r"><code># by using lx
@@ -110,14 +114,14 @@ exn(LT1, x = 0, type = &quot;curtate&quot;)</code></pre>
 <pre><code>## [1] 59.5</code></pre>
 <p><strong>Exercise</strong>.</p>
 
-<div id="htmlwidget-819cfde4bd837dac2dd9" style="width:100%;height:auto;", class = "quiz html-widget">
+<div id="htmlwidget-5a5239ffedfc499f6684" style="width:100%;height:auto;", class = "quiz html-widget">
 <div class="panel panel-default">
 <div class="panel-body quizArea">
 </div>
 </div>
 </div>
 
-<script type="application/json" data-for="htmlwidget-819cfde4bd837dac2dd9">{"x":{"question":"Which one of the following statements about lifetimes and life expectancies is correct?","answers":[{"option":"The complete expectancy of life computes the expected value of the interger part of the lifetime.","correct":false,"message":"The complete expectancy of life computes the expected value of the lifetime."},{"option":"The curtate life expectancy refers to the expected value of the lifetime.","correct":false,"message":"The curtate life expectancy refers to the expected value of the interger part of the lifetime."},{"option":"The curtate lifetime is always larger or equal to the exact lifetime.","correct":false,"message":"The curtate lifetime is always smaller or equal to the exact lifetime. This is because the integer part of the lifetime is always smaller or equal to the exact lifetime."},{"option":"The curtate life expectancy is always smaller or equal to the complete life expectancy.","correct":true,"message":null}],"label":"dislife","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Which one of the following statements about lifetimes and life expectancies is correct?","a":[{"option":"The complete expectancy of life computes the expected value of the interger part of the lifetime.","correct":false,"message":"The complete expectancy of life computes the expected value of the lifetime."},{"option":"The curtate life expectancy refers to the expected value of the lifetime.","correct":false,"message":"The curtate life expectancy refers to the expected value of the interger part of the lifetime."},{"option":"The curtate lifetime is always larger or equal to the exact lifetime.","correct":false,"message":"The curtate lifetime is always smaller or equal to the exact lifetime. This is because the integer part of the lifetime is always smaller or equal to the exact lifetime."},{"option":"The curtate life expectancy is always smaller or equal to the complete life expectancy.","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-5a5239ffedfc499f6684">{"x":{"question":"Which one of the following statements about lifetimes and life expectancies is correct?","answers":[{"option":"The complete expectancy of life computes the expected value of the interger part of the lifetime.","correct":false,"message":"The complete expectancy of life computes the expected value of the lifetime."},{"option":"The curtate life expectancy refers to the expected value of the lifetime.","correct":false,"message":"The curtate life expectancy refers to the expected value of the interger part of the lifetime."},{"option":"The curtate lifetime is always larger or equal to the exact lifetime.","correct":false,"message":"The curtate lifetime is always smaller or equal to the exact lifetime. This is because the integer part of the lifetime is always smaller or equal to the exact lifetime."},{"option":"The curtate life expectancy is always smaller or equal to the complete life expectancy.","correct":true,"message":null}],"label":"dislife","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Which one of the following statements about lifetimes and life expectancies is correct?","a":[{"option":"The complete expectancy of life computes the expected value of the interger part of the lifetime.","correct":false,"message":"The complete expectancy of life computes the expected value of the lifetime."},{"option":"The curtate life expectancy refers to the expected value of the lifetime.","correct":false,"message":"The curtate life expectancy refers to the expected value of the interger part of the lifetime."},{"option":"The curtate lifetime is always larger or equal to the exact lifetime.","correct":false,"message":"The curtate lifetime is always smaller or equal to the exact lifetime. This is because the integer part of the lifetime is always smaller or equal to the exact lifetime."},{"option":"The curtate life expectancy is always smaller or equal to the complete life expectancy.","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
 <p><strong>Exercise</strong> Compute the value of <span class="math inline">\(p_{50}\)</span> based on the life table LT1.</p>
 <div class="tutorial-exercise" data-label="ltprob" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="6">
 <pre class="text"><code># by using lx
@@ -172,21 +176,21 @@ summary(FLT)</code></pre>
 <p><strong>Example</strong>. Plot the <span class="math inline">\(l_x\)</span> for the French life table:</p>
 <pre class="r"><code># plot the life table 
 plot(FLT, type=&quot;l&quot;)</code></pre>
-<p><img src="lifetables_files/figure-html4/unnamed-chunk-6-1.png" width="624" /></p>
+<p><img src="lifetables_files/figure-html4/unnamed-chunk-9-1.png" width="624" /></p>
 <p><strong>Example:</strong> Do a plot of <span class="math inline">\(q_x\)</span> and <span class="math inline">\(d_x\)</span> for the French life table.</p>
 <pre class="r"><code># Plot of q_x vs x 
 # Plot of q_x vs x 
 plot(FTqx$Age, FTqx$qx, type = &quot;l&quot;, xlab=&quot;Age&quot;,ylab=&quot;qx&quot;, main = &quot;qx vs x&quot;)</code></pre>
-<p><img src="lifetables_files/figure-html4/unnamed-chunk-7-1.png" width="624" /></p>
+<p><img src="lifetables_files/figure-html4/unnamed-chunk-10-1.png" width="624" /></p>
 <pre class="r"><code>plot(FTqx$Age, log(FTqx$qx), type = &quot;l&quot;, xlab=&quot;Age&quot;,ylab=&quot;log(qx)&quot;, main = &quot;qx vs x&quot;)</code></pre>
-<p><img src="lifetables_files/figure-html4/unnamed-chunk-7-2.png" width="624" /></p>
+<p><img src="lifetables_files/figure-html4/unnamed-chunk-10-2.png" width="624" /></p>
 <pre class="r"><code># Plot of d_x vs x
 dxt(FLT, 0)</code></pre>
 <pre><code>## [1] 871</code></pre>
 <pre class="r"><code>dx &lt;- function(x) dxt(FLT, x)
 dx_vec &lt;- Vectorize(dx)
 plot(FLT@x,dx_vec(FLT@x),type=&quot;l&quot;,xlab=&quot;Age&quot;,ylab=&quot;dx&quot;, main = &quot;dx vs x&quot;)</code></pre>
-<p><img src="lifetables_files/figure-html4/unnamed-chunk-7-3.png" width="624" /></p>
+<p><img src="lifetables_files/figure-html4/unnamed-chunk-10-3.png" width="624" /></p>
 <p>In the above code we note the use of the function <code>Vectorize</code> which enables the vectorisation of scalar functions.</p>
 <p><strong>Exercise:</strong> Use the French life table to answer the following questions.</p>
 <ul>
@@ -221,7 +225,7 @@ exn(FLT, 0, type = &quot;complete&quot;)</code></pre>
 </div>
 <div id="section-assumptions-for-non-integer-ages" class="section level2">
 <h2>Assumptions for non-integer ages</h2>
-<p>The <strong>lifecontingencies</strong> package allows the evaluation of survival probabilities at fractional intervals, using different kinds of interpolation approaches.</p>
+<p>The <code>lifecontingencies</code> package allows the evaluation of survival probabilities at fractional intervals, using different kinds of interpolation approaches.</p>
 <p><strong>Example:</strong> Using the French Life Table calculate <span class="math inline">\({}_{0.6}p_{80}\)</span> under:</p>
 <ul>
 <li>the assumption of uniform distribution of deaths (linear interpolation).</li>
@@ -276,7 +280,7 @@ ave_death</code></pre>
 max_death</code></pre>
 <pre><code>## [1] 3891</code></pre>
 <pre class="r"><code>plot(ldeaths)</code></pre>
-<p><img src="lifetables_files/figure-html4/unnamed-chunk-11-1.png" width="624" /></p>
+<p><img src="lifetables_files/figure-html4/unnamed-chunk-14-1.png" width="624" /></p>
 </div>
 <div id="section-life-table" class="section level3">
 <h3>Life Table</h3>
@@ -304,7 +308,7 @@ pxt_78_int&lt;-pxt(MT_japan, x = 78, t = 1)
 prob_78&lt;-pxt_78_frac*(1-pxt_78_int/pxt_78_frac)
   
 plot(MT_japan, type=&quot;l&quot;)</code></pre>
-<p><img src="lifetables_files/figure-html4/unnamed-chunk-12-1.png" width="624" /></p>
+<p><img src="lifetables_files/figure-html4/unnamed-chunk-15-1.png" width="624" /></p>
 </div>
 </div>
 <div id="section-references" class="section level2">

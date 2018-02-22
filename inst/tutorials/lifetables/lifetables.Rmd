@@ -16,45 +16,57 @@ knitr::opts_knit$set(root.dir = getwd())
 
 ## Introduction
 
-In this tutorial we aim to discuss the implementation of life table  computations using the package **lifecontingencies** [@Spedicato2013].
+In this tutorial we aim to discuss the implementation of life table  computations using the package `lifecontingencies` [@Spedicato2013].
 
-The **lifecontingencies** package is the main `R` package available for performing standard financial and actuarial mathematics calculations. In this section we aim to introduce the use of this package for performing life table calculations. If you are interested in the wider use of this package please refer to Chapter 7 of the book by @Charpentier2014.
+The `lifecontingencies` package is the main `R` package available for performing standard financial and actuarial mathematics calculations. In this tutorial we focus on the use of this package for performing life table calculations. If you are interested in the wider use of this package please refer to Chapter 7 of the book by @Charpentier2014.
 
-Note that the **lifecontingencies** package has been loaded in the current R workspace. Therefore you can utilise the capacities of the package without explicitly loading it.
+Note that the `lifecontingencies` package has been loaded in the current `R` workspace. Therefore you can utilise the capacities of the package without explicitly loading it. However, if you are using the package outside this tutorial remember to first install the package with the code:
+
+```{r eval=FALSE}
+install.packages("lifecontingencies", dependencies = TRUE)
+```
+
+And the load it with the instruction
+
+```{r eval=FALSE}
+library("lifecontingencies")
+```
+
 
 ## Creating a life table - Method I
 
-In **lifecontingencies** there are several approaches for creating a life table. The first one is by inputting directly the $l_x$. 
+In `lifecontingencies` there are several approaches for creating a life table. The first one is by inputting directly the $l_x$. 
 
-**Example**. if we consider $l_0 = 120, l_1 = 119, l_2 = 118, \ldots, l_{120} = 0$, we can create a life table with the following steps:
+For example, if we consider $l_0 = 120, l_1 = 119, l_2 = 118, \ldots, l_{120} = 0$, we can create a life table with the following steps:
 
 
-```{r lt,cache=TRUE}
+```{r lt}
 ## create a life table
-x <- 0:120 # create a vector Xof ages, that is, integers from 0 to 120
+x <- 0:120 # create a vector X of ages, that is, integers from 0 to 120
 lx <- 120:0 # create lx, that is, a vector from 120 to 0
-names(lx) <- x # name each element of lx by using $x
+names(lx) <- x #name each element of lx by using x
 
 # create a life table LT1 by using the new function,
 # which generates a lifetableclass object in R
 LT1 <- new("lifetable", x = x, lx = lx, name="Sample life table 1")
 ```
 
-
 We can create a plot of $l_x$ with the following code:
 
 ```{r}
 # plot LT1 by using the plot() function
 plot(LT1, type="l")
+```
 
+Or alternatively:
+```{r}
 # plot LT1 by using the plot() function with specifications
 plot(LT1@x,LT1@lx,lwd=2,col="red",type="l",xlab="Age",ylab="lx", main = "lx vs x")
 ```
 
-**Exercise**
 
 ```{r disdist, echo=FALSE}
-question("Can you see what distribution we are assuming for the future life time T?",
+question("What distribution we are assuming for the future life time T in the previous plots of lx?",
   answer("Weibull distribution",message = "The Weibull distribution is a candidate for life time models; however, in this case lx decreases linearly throught time which means T doesn't follow a Weibull distribution."),
   answer("Exponential distribution (constant force of mortality)", message = "The exponential distribution has a constant force of mortality. Since lx decreases linearly through ages, the mortality rate increases."),
   answer("The future lifetime is uniformly distributed.", correct = TRUE),
@@ -223,7 +235,7 @@ exn(FLT, 0, type = "complete")
 
 ## Assumptions for non-integer ages
 
-The **lifecontingencies** package allows the evaluation of survival probabilities at fractional intervals, using different kinds of interpolation approaches. 
+The `lifecontingencies` package allows the evaluation of survival probabilities at fractional intervals, using different kinds of interpolation approaches. 
 
 **Example:** Using the French Life Table calculate ${}_{0.6}p_{80}$ under:
 
