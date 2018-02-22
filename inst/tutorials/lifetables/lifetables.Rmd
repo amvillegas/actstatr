@@ -131,13 +131,13 @@ question("Which one of the following statements about lifetimes and life expecta
 
 ```
 
-```{r ltprob-hint-1, cache=TRUE}
+```{r ltprob-hint-1}
 # Note that this is a one-year survival probability,
 # hence one can use the pxt function.
 ```
 
 
-```{r ltprob-hint-2,cache=TRUE}
+```{r ltprob-hint-2}
 # by using lx
 lx["51"]/lx["50"]
 
@@ -213,7 +213,7 @@ In the above code we note the use of the function `Vectorize` which enables the 
 
 ```
 
-```{r french2-hint-1,cache=TRUE}
+```{r french2-hint-1}
 # Part 1.
 # you need to compute the multiplication of two probabilities
 
@@ -223,7 +223,7 @@ In the above code we note the use of the function `Vectorize` which enables the 
 ## The solutions are included in the next hint page
 ```
 
-```{r french2-hint-2,cache=TRUE}
+```{r french2-hint-2}
 #Part 1.
 pxt(FLT, x = 60, t = 5) * qxt(FLT, x = 65, t = 5) 
 
@@ -268,14 +268,14 @@ pxt(FLT, x = 80, t = 0.6, fractional = "hyperbolic")
 ```
 
 
-```{r frac-hint-1,cache=TRUE}
+```{r frac-hint-1}
 # note that you should use the qxt function
 # while specify the argument fractional as "hyperbolic"
 
 ## The solutions are included in the next page.
 ```
 
-```{r frac-hint-2,cache=TRUE}
+```{r frac-hint-2}
 qxt(FLT, x = 80, t = 0.4, fractional = "hyperbolic") 
 ```
 
