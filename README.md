@@ -6,7 +6,7 @@ actstatr: Interactive R tutorials for actuarial statistics
 actstatr is an R package bundling several [learnr](https://rstudio.github.io/learnr/index.html) interactive tutorials for actuarial statistics. These tutorials consist of content along with interactive components for checking and reinforcing understanding. Tutorial topics include (tutorial name in parentheses):
 
 -   Basics of R (basicr): An introduction to the basic capabilities of the `R` software.
--   Life Tables (lifetable): Implementation of life table computations using the package `lifecontingencies`.
+-   Life Tables (lifetables): Implementation of life table computations using the package `lifecontingencies`.
 
 Installation:
 =============
