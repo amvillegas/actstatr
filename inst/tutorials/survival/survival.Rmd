@@ -1,0 +1,396 @@
+---
+title: "Survival Analysis"
+output: learnr::tutorial
+bibliography: library.bib
+markdown_extensions:
+    - admonition  
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library("learnr")
+library("lifecontingencies")
+library("survival")
+library("KMsurv")
+tutorial_options(exercise.timelimit = 60)
+knitr::opts_knit$set(root.dir = getwd()) 
+```
+
+## Introduction
+
+This tutorial discusses the functions that are used for survival analysis in `R`, including the Kaplan-Meier and Nelson-Aelen estimators, Cox regression models and accelerated failure time models. This tutorial is based on the *Survival Analysis in R* guide available at [OpenIntro](https://www.openintro.org/stat/surv.php){target="_blank"} [@Diez2013]. 
+
+It is assumed that the reader has a basic understanding of working in `R`. For this module, we will need the **survival** [@Therneau2015] and **KMsurv** [@Yan2012] packages. Note that both of these packages have been loaded in the current R workspace. Therefore you can utilise the capacities of the package without explicitly loading it.
+
+However, if you are using the packages outside this tutorial remember to first install the packages with the code:
+
+```{r eval=FALSE}
+install.packages("survival", dependencies = TRUE)
+install.packages("KMsurv", dependencies = TRUE)
+
+```
+
+And then load them with the instruction
+
+```{r eval=FALSE}
+library("survival")
+library("KMsurv")
+```
+
+
+## KM Estimation
+
+For the following section, we will need to use the `tongue` data set. This dataset, which is discussed in detail in @Klein2003 [Section 1.11], contains times to death for patients with cancer of the tongue according to two types of tumours. Here the `type` variable refers to the Tumor DNA profile (where 1 and 2 correspond to Aneuploid Tumor and Diploid Tumor), the `time` variable records the time to death or on-study time (in weeks), and delta is an indicator for the status of life (where 0 refers to aline and 1 refers to dead).
+
+One can load the data by using the `data` function.
+
+```{r}
+data(tongue)
+head(tongue)
+attach(tongue)
+```
+Note the use of the `attach` function which makes the variables in `tongue` accessible from the `R` workspace.
+
+
+One can create a survival object using the `Surv` function. This object will be used in the survival functions later. 
+
+```{r}
+# create a subset for just the first group by using [type==1]
+cens.tongue <- Surv(time[type == 1], delta[type == 1])
+cens.tongue
+```
+
+The `tongue` data correspond to **right-censored data**.  Note that the `cens.tongue` object will denote censored observations by `+`. The **survival package** also supports left-truncated right-censored data.
+
+We want to estimate the Kaplan-Meier estimate. This is done using the `survfit` function. The `conf.int` argument is the confidence interval level while the `conf.type` is the transformation used to construct the confidence interval. By default, this latter argument is set to `log`, which is $g(t) = \log(t)$.
+
+```{r}
+fit1 <- survfit(cens.tongue ~ 1, conf.int = 0.95, conf.type = "log")
+summary(fit1)
+```
+
+The Kaplan-Meier estimate can be plotted using `plot(fit1)`:
+
+```{r KMplot}
+plot(fit1, main = "KM estimate with 95% confidence intervals", xlab = "time", 
+     ylab = "S(x)")
+```
+
+### Exercises
+
+1. Calculate the KM estimate for the second group (that is, type 2) of the `alloauto` data set with 99% confidence interval. Note the `alloauto` data includes the following three variables
+
+- time: Time to death or relapse, months
+- type: Type of transplant (1=allogeneic, 2=autologous)
+- delta: Leukemia-free survival indicator (0=alive without relapse, 1=dead or relapse)
+
+
+```{r km, exercise=TRUE,exercise.lines=16}
+# load and attach the data
+data(alloauto)
+attach(alloauto)
+
+# create the surival object for the second group
+cens.alloauto <- Surv(time[type == 2], delta[type == 2])
+
+# fit the survival curve
+
+
+# print out the results
+
+
+# plot the curve with confidence intervals
+
+
+```
+
+```{r km-solution}
+# load and attach the data
+data(alloauto)
+attach(alloauto)
+
+# create the surival object for the second group
+cens.alloauto <- Surv(time[type == 2], delta[type == 2])
+
+# fit the survival curve
+fit2 <- survfit(cens.alloauto ~ 1, conf.int = 0.99, conf.type = "log")
+
+# print out the results
+summary(fit2)
+
+# plot the curve with confidence intervals
+plot(fit2, main = "KM estimate with 99% confidence intervals", xlab = "time", 
+     ylab = "S(x)")
+```
+
+
+2.
+
+```{r km2, echo=FALSE}
+question("Based on the results of the previous exercise, what are the KM estimate and its standard error of the survival rate at 10 months?",
+  answer("0.681 and 0.0659",correct = TRUE),
+  answer("0.660 and 0.0672", message = "You should look at the estimate at 8.711 instead of 10.329"),
+  answer("0.531 and 0.874", message = "0.531 and 0.874 are the boundaries of the corresponding confidence interval."),
+  answer("There is no event at 10 months hence the results are not available", message = "The KM estimate at 10 is the same as that of 8.711 (that is, the closet event whose time is no more than 10."),
+  allow_retry = TRUE
+)
+```
+
+
+## NA Estimation
+
+We can also use the `survfit` function to calculate the Nelson-Aalen estimator. This is done by setting the `type` argument to `"fh"` (here `"fh"` stands for Fleming-Harrington which is an alternative name used in some textbooks for the Nelson-Aaelen estimators) as shown below.
+
+```{r NAest}
+fit2 <- survfit(cens.tongue ~ 1, conf.int = 0.95, type = "fh")
+summary(fit2)
+plot(fit2, main = "NA estimate with 99% confidence intervals", xlab = "time", 
+     ylab = "S(x)")
+```
+
+The comparison of the Kaplan Meier and Nelson-Aalen  estimators is shown below. 
+
+```{r KMvNA}
+plot(fit1, main = "KM v.s. NA estimates", xlab = "time", ylab = "S(x)", col = "blue")
+lines(fit2, col = "red")
+legend("topright", c("KM", "NA"), col = c("blue", "red"), lty = 1)
+```
+
+### Exercise 
+
+```{r kmna, echo=FALSE}
+question("Does the ordering between the KM and NA lines above make sense?",
+  answer("Yes. The NA estimates should be higher that KM estimates between t1 and tmax.",correct = TRUE),
+  answer("No. The NA and KM estimates should be the same.", message = "Recall that we have $\\hat{S}_{KM}(t)<\\hat{S}_{NA}(t)$, for $t_1\\leq t \\leq t_{max}$."),
+  answer("No. The KM estimates should be higher that the NA estimates.", message = "Recall that we have $\\hat{S}_{KM}(t)<\\hat{S}_{NA}(t)$, for $t_1\\leq t \\leq t_{max}$."),
+  allow_retry = TRUE
+)
+```
+
+## Log-Rank and Wilcoxon Tests
+
+In order to conduct Log-rank and Wilcoxon tests for the difference between two survival curves, you will need to use the `survdiff` function. Setting the argument `rho` equal to zero will specify a Log-rank test. 
+
+For instance. we can apply the Log-rank test to test if the survival times for the two types of tumours in the `tongue` dataset are the same:
+
+```{r}
+G2 <- Surv(time, delta)
+logrank <- survdiff(G2 ~ type, rho = 0)
+logrank 
+```
+
+Alternatively, setting the `rho` argument to 1 will specify the Wilcoxon test:
+
+```{r}
+Wilcoxon <- survdiff(G2 ~ type, rho = 1)
+Wilcoxon 
+detach(tongue)
+```
+The output of `survdiff` is generally self-explanatory. A $\chi^2$ statistic is computed along with a p-value. In this particular case, we cannot reject the hypothesis that both type of tumours have the same survival time.
+
+### Exercises
+
+1. Apply the log-rank test and test whether the survival curves for the two types of transplant of the `alloauto` data are the same. 
+
+```{r lr, exercise=TRUE,exercise.lines=12}
+# load and attach the data
+data(alloauto)
+attach(alloauto)
+
+# create the survival object 
+
+
+# perform the log-rank test
+
+
+```
+
+```{r lr-solution}
+# load and attach the data
+data(alloauto)
+attach(alloauto)
+
+# create the survival object 
+alloauto <- Surv(time, delta)
+
+# perform the log-rank test
+lr_alloauto<- survdiff(alloauto ~ type, rho = 0)
+lr_alloauto 
+```
+
+2. Apply the Wilcoxon test and test whether the survival curves for the two types of transplant of the `alloauto` data are the same. 
+
+```{r wn, exercise=TRUE,exercise.lines=12}
+# load and attach the data
+data(alloauto)
+attach(alloauto)
+
+# create the survival object 
+
+
+# perform the Wilcoxon test
+
+
+```
+
+```{r wn-solution}
+# load and attach the data
+data(alloauto)
+attach(alloauto)
+
+# create the survival object 
+alloauto <- Surv(time, delta)
+
+# perform the Wilcoxon test
+wn_alloauto <- survdiff(alloauto ~ type, rho = 1)
+wn_alloauto 
+```
+
+3. 
+
+```{r lrwn, echo=FALSE}
+question("At a critical value of 5%, what can you conclude from the test results?",
+         answer("The Wilcoxon test suggests significant difference, while the log-rank test does not.", message = "Both p-values are larger than 5% so there is no significant difference."),
+         answer("The log-rank test suggests significant difference, while the Wilcoxon test does not.",message = "Both p-values are larger than 5% so there is no significant difference."),
+         answer("Both test do not suggest significant difference.", correct = TRUE),
+         answer("Both test suggest significant difference.", message = "Both p-values are larger than 5% so there is no significant difference."),
+         allow_retry = TRUE
+)
+```
+
+## Cox Proportional Hazard Model
+
+For the following examples, we will be using the `larynx` dataset. This dataset, which is discussed in detail in @Klein2003 [Section 1.8], contains times to death for male patients with laryngeal cancer. Note the data frame contains the following columns (see the R help file):
+
+- stage: Stage of disease (1=stage 1, 2=stage2, 3=stage 3, 4=stage 4)
+
+- time: Time to death or on-study time, months
+
+- age: Age at diagnosis of larynx cancer
+
+- diagyr: Year of diagnosis of larynx cancer
+
+- delta: Death indicator (0=alive, 1=dead)
+
+We first conduct a similar procedure as in the case of fitting the KM/NA estimators and create a survival object from the data.
+
+```{r}
+data(larynx)
+head(larynx)
+attach(larynx)
+cens.larynx <- Surv(time,delta)
+cens.larynx
+```
+
+The Cox PH model can be fitted  using the `coxph` function, with the argument `method` specifying the estimation procedure to be used. Note the use of the `as.factor` function to allow each of the different values of the variable "stage" to be treated separately in the regression. We can also obtain the baseline hazard function using the `basehaz` function. This is demonstrated below.
+
+```{r}
+Cox.Reg <- coxph(cens.larynx ~ as.factor(stage) + age, method = "breslow")
+summary(Cox.Reg)
+```
+
+
+We can also obtain the baseline hazard function using the `basehaz` function. This is demonstrated below.
+
+```{r}
+Base.H <- basehaz(Cox.Reg, centered = FALSE)
+plot(Base.H$time, Base.H$hazard, xlab = "t", ylab = "H_0(t)", 
+     main = "Baseline Hazard Rate", type = "s")
+```
+
+### Exercises
+Based on the output of the previous Cox regression, answer the following questions. 
+
+```{r coxreg2, echo=FALSE}
+question("Which one of the following statements is correct?",
+         answer("All the covaraites turn out to be significant (based on a 5% critical level)", message = "The p-values for stage 2, stage 3 and age are all larger than 0.05."),
+         answer("The likelihood ratio and Wald tests show that it is worth including the covariates compared to the baseline model.",correct = TRUE),
+         answer("The basedline model correspond to stage 1 and age 1",message = "The baseline age is 0."),
+         allow_retry = TRUE
+)
+```
+
+```{r coxreg3, echo=FALSE}
+question("Suppose that A is one year elder than B and both of them are in stage 2. What is the ratio of mortality rate between A and B (approximately) given the numerical output of the fitting? Does this change if they are both at stage 3 (assuming that the Cox model is correct)?",
+         answer("0.01908, Yes", message = "The ratio should be 1.01908 (which is exp(coef) or 1+coef approximately). Furthermore, the ratio stays the same due to the Cox regression assumption of proportionality."),
+         answer("1.01908, Yes", message = "The ratio stays the same due to the Cox regression assumption of proportionality."),
+         answer("0.01908, No", message = "The ratio should be 1.01908 (which is exp(coef) or 1+coef approximately)."),
+         answer("1.01908, No", correct = TRUE),
+         allow_retry = TRUE
+)
+```
+
+```{r coxreg4, echo=FALSE}
+question("Which of the following transition will lead to the highest percentage change of mortality rate (given the same age)?",
+         answer("Transition from stage 1 to stage 2.", message = "The increase of the mortality rate is 14.862%, which is not the highest."),
+         answer("Transition from stage 2 to stage 3.", message = "The increase of the mortality rate is 64.837%, which is not the highest."),
+         answer("Transition from stage 3 to stage 4.", correct = TRUE),
+         allow_retry = TRUE
+)
+```
+
+## Accelerate Failure Time model
+
+Finally, we can fit in a similar manner the appropriate AFT model by specifying the distribution in the `dist` argument of the `survreg` function. We demonstrate the use of this function below for a Weibull AFT model.   
+
+```{r}
+Weib.Reg <- survreg(cens.larynx ~ as.factor(stage) + age, dist = 'weibull')
+summary(Weib.Reg)
+```
+In the output, `(Intercept)` and `Log(scale)` correspond to estimates of $\mu$ and $\log \sigma$.
+
+### Exercise
+
+Apply the Weibull AFT model to the `alloauto` dataset with the covariate type (as a factor)
+
+
+```{r aft, exercise=TRUE,exercise.lines=12}
+# load and attach the data
+data(alloauto)
+attach(alloauto)
+
+# create the surival object 
+alloauto <- Surv(time,delta)
+
+# apply the Weibull AFT model
+
+
+```
+
+```{r aft-solution}
+# load and attach the data
+data(alloauto)
+attach(alloauto)
+
+# create the surival object 
+alloauto <- Surv(time,delta)
+
+# apply the Weibull AFT model
+Weib.alloauto <- survreg(alloauto ~ as.factor(type), dist = 'weibull')
+summary(Weib.alloauto)
+```
+
+```{r aft2, echo=FALSE}
+question("Which one of the following coefficient is significant (at a critical value of 5%)?",
+         answer("Stage 2", message = "The p-value is higher than 5% hence it is not significant."),
+         answer("Stage 3", message = "The p-value is higher than 5% hence it is not significant."),  
+         answer("Stage 4", correct = TRUE),         
+         answer("age", message = "The p-value is higher than 5% hence it is not significant."),
+         allow_retry = TRUE
+)
+```
+
+
+```{r aft3, echo=FALSE}
+question("Suppose that A is one year older than B and both of them are in stage 2. What is the ratio of mortality rate between A and B (approximately) given the numerical output of the AFT fitting?",
+         answer("1.01908", message = "This is calculated based on the fitting of the Cox regressoin model."),
+         answer("0.9826522", message = "Note that you should change the sign of the estimated coefficient before taking the exponential."),
+         answer("0.0175", message = "The ratio should be exp(0.0175) or approximately 1+the coefficient."),
+         answer("1.017654", correct = TRUE),
+         allow_retry = TRUE
+)
+```
+
+
+## References
+

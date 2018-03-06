@@ -26,7 +26,7 @@ Note that the `lifecontingencies` package has been loaded in the current `R` wor
 install.packages("lifecontingencies", dependencies = TRUE)
 ```
 
-And the load it with the instruction
+And then load it with the instruction
 
 ```{r eval=FALSE}
 library("lifecontingencies")
@@ -74,6 +74,8 @@ question("What distribution we are assuming for the future life time T in the pr
   allow_retry = TRUE
 )
 ```
+
+
 ### Survival and death probabilites
 
 Having created a life table we can easily compute survival probabilities and death probabilities with  functions `pxt`, `qxt`. 

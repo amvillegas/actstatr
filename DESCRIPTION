@@ -9,5 +9,8 @@ Description: An R package bundling learnr tutorials for actuarial statisitics.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Imports: 
-    lifecontingencies
+Imports:
+    lifecontingencies,
+    survival,
+    KMsurv
+Suggests: testthat
