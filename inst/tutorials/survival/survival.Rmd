@@ -167,9 +167,9 @@ question("Does the ordering between the KM and NA lines above make sense?",
 )
 ```
 
-## Log-Rank and Wilcoxon Tests
+## Log-Rank and Peto-Peto Tests
 
-In order to conduct Log-rank and Wilcoxon tests for the difference between two survival curves, you will need to use the `survdiff` function. Setting the argument `rho` equal to zero will specify a Log-rank test. 
+In order to conduct Log-rank and Peto-Peto tests for the difference between two survival curves, you will need to use the `survdiff` function. Setting the argument `rho` equal to zero will specify a Log-rank test. 
 
 For instance. we can apply the Log-rank test to test if the survival times for the two types of tumours in the `tongue` dataset are the same:
 
@@ -179,11 +179,11 @@ logrank <- survdiff(G2 ~ type, rho = 0)
 logrank 
 ```
 
-Alternatively, setting the `rho` argument to 1 will specify the Wilcoxon test:
+Alternatively, setting the `rho` argument to 1 will specify the Peto-Peto test:
 
 ```{r}
-Wilcoxon <- survdiff(G2 ~ type, rho = 1)
-Wilcoxon 
+peto <- survdiff(G2 ~ type, rho = 1)
+peto 
 detach(tongue)
 ```
 The output of `survdiff` is generally self-explanatory. A $\chi^2$ statistic is computed along with a p-value. In this particular case, we cannot reject the hypothesis that both type of tumours have the same survival time.
@@ -218,7 +218,7 @@ lr_alloauto<- survdiff(alloauto ~ type, rho = 0)
 lr_alloauto 
 ```
 
-2. Apply the Wilcoxon test and test whether the survival curves for the two types of transplant of the `alloauto` data are the same. 
+2. Apply the Peto-Peto test and test whether the survival curves for the two types of transplant of the `alloauto` data are the same. 
 
 ```{r wn, exercise=TRUE,exercise.lines=12}
 # load and attach the data
@@ -228,7 +228,7 @@ attach(alloauto)
 # create the survival object 
 
 
-# perform the Wilcoxon test
+# perform the Peto-Peto test
 
 
 ```
@@ -241,17 +241,17 @@ attach(alloauto)
 # create the survival object 
 alloauto <- Surv(time, delta)
 
-# perform the Wilcoxon test
-wn_alloauto <- survdiff(alloauto ~ type, rho = 1)
-wn_alloauto 
+# perform the Peto-Peto test
+peto_alloauto <- survdiff(alloauto ~ type, rho = 1)
+peto_alloauto 
 ```
 
 3. 
 
 ```{r lrwn, echo=FALSE}
 question("At a critical value of 5%, what can you conclude from the test results?",
-         answer("The Wilcoxon test suggests significant difference, while the log-rank test does not.", message = "Both p-values are larger than 5% so there is no significant difference."),
-         answer("The log-rank test suggests significant difference, while the Wilcoxon test does not.",message = "Both p-values are larger than 5% so there is no significant difference."),
+         answer("The Peto-Peto test suggests significant difference, while the log-rank test does not.", message = "Both p-values are larger than 5% so there is no significant difference."),
+         answer("The log-rank test suggests significant difference, while the Peto-Peto test does not.",message = "Both p-values are larger than 5% so there is no significant difference."),
          answer("Both test do not suggest significant difference.", correct = TRUE),
          answer("Both test suggest significant difference.", message = "Both p-values are larger than 5% so there is no significant difference."),
          allow_retry = TRUE
