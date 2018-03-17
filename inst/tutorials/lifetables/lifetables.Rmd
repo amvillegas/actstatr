@@ -89,7 +89,7 @@ lx["52"]/lx["50"]
 pxt(LT1,x = 50, t = 2) 
 ```
 
-Similarly, one can use find out the value for the death probability, $_{10}q_{75}$, by using the following codes:
+Similarly, one can find out the value for the death probability, $_{10}q_{75}$, by using the following codes:
 
 ```{r}
 # by using lx
@@ -113,14 +113,14 @@ exn(LT1, x = 0, type = "curtate")
 ```
 
 ```{r dislife, echo=FALSE}
-question("Which one of the following statements about lifetimes and life expectancies is false?",
-  answer("The curtate life expectancy computes the expected value of the interger part of the lifetime.",
-         message = "Recall that curtate life expectancy is given by $e_x=E[K_x]$ with $K_x=\\lfloor{T_x}\\rfloor$."),
+question("Which one of the following statements about lifetimes and life expectancies is **false**?",
+  answer("The curtate life expectancy computes the expected value of the integer part of the lifetime.",
+         message = "This statement is true. Recall that curtate life expectancy is given by $e_x=E[K_x]$ with $K_x=\\lfloor{T_x}\\rfloor$."),
   answer("The complete life expectancy refers to the expected value of the lifetime.", 
-         message = "Recall that complete life expectancy is given by $\\mathring{e}_x=E[T_x]$."),
-  answer("The curtate lifetime is always larger or equal to the exact lifetime.", message = "The curtate lifetime is always smaller or equal to the exact lifetime. This is because the integer part of the lifetime is always smaller or equal to the exact lifetime." , correct = TRUE),
+         message = "This statement is true. Recall that complete life expectancy is given by $\\mathring{e}_x=E[T_x]$."),
+  answer("The curtate lifetime is always larger or equal to the exact lifetime.", message = "This statement is false. The curtate lifetime is always smaller or equal to the exact lifetime. This is because the integer part of the lifetime is always smaller or equal to the exact lifetime." , correct = TRUE),
   answer("The curtate life expectancy is always smaller or equal to the complete life expectancy.",
-         message = "Recall that $\\lfloor{x}\\rfloor\\leq x$ therefore $e_x=E[K_x]=E[\\lfloor{T_x}\\rfloor]\\leq E[T_x] = \\mathring{e}_x$ "),
+         message = "This statement is true. Recall that $\\lfloor{x}\\rfloor\\leq x$ therefore $e_x=E[K_x]=E[\\lfloor{T_x}\\rfloor]\\leq E[T_x] = \\mathring{e}_x$ "),
   allow_retry = TRUE
 )
 ```
@@ -171,7 +171,7 @@ pxt(LT1,x = 50, t = 1)
 
 ## Creating a life table - Method II
 
-An alternative way for creating a life table is from one year death/survival probabilities using the convenience function `probs2lifetable`. To illustrate this, consider the data on one-year death probabilities from the French population in the file "FrenchTable.csv" available in the course website. We can create a life table as follows: 
+An alternative way for creating a life table is from one year death/survival probabilities using the convenient function `probs2lifetable`. To illustrate this, consider the data on one-year death probabilities from the French population in the file "FrenchTable.csv" available in the course website. We can create a life table as follows: 
 
 ```{r}
 # Read the csv file
