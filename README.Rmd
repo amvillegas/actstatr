@@ -19,7 +19,8 @@ actstatr is an R package bundling several [learnr](https://rstudio.github.io/lea
 
 - Basics of R (`"basicr"`"): An introduction to the basic capabilities of the `R` software.
 - Life Tables (`"lifetables"`): Implementation of life table  computations using the package `lifecontingencies`.
-- Survival analysis (`"survival"`"): Survival analysis in `R`, including the Kaplan-Meier and Nelson-Aelen estimators, Cox regression models and accelerated failure time models.
+- Survival analysis (`"survival"`): Survival analysis in `R`, including the Kaplan-Meier and Nelson-Aelen estimators, Cox regression models and accelerated failure time models.
+- Markokv chains (`"markovchains"`): Application of continuous time Markov chains (MC) in `R` by using the package `markovchain`.
 
 # Installation:
 

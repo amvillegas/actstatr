@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+<meta name="progressive" content="false" />
+<meta name="allow-skip" content="false" />
+
+<title>Continuous Time Markov Chains</title>
+
+
+<!-- highlightjs -->
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+</head>
+
+<body>
+
+
+
+<div class="pageContent band">
+<div class="bandContent page">
+
+<div class="topics">
+
+<div id="section-introduction" class="section level2">
+<h2>Introduction</h2>
+<p>In this tutorial we aim to discuss the application of continuous time Markov chains (MC) in <code>R</code> by using the package <strong>markovchain</strong> <span class="citation">(Spedicato 2017)</span>.</p>
+<p>This tutorial will consist of three parts: Markov chain objects in <code>R</code>, properties of a continuous Markov chain, and simulation and parameter estimation of a Markov chain.</p>
+<p>Note that the <strong>markovchain</strong> and <strong>diagram</strong> <span class="citation">(Soetaert 2017)</span> packages (the latter is only used to create transition diagrams) have been loaded in the current <code>R</code> workspace. Therefore you can utilise the capacities of these packages without explicitly loading it. Furthermore, we focus on the continuous time Markov chains in this tutorial, although the package also covers functions for discrete time Markov chains.</p>
+<p>However, if you are using the packages outside this tutorial remember to first install the packages with the code:</p>
+<pre class="r"><code>install.packages(&quot;markovchain&quot;, dependencies = TRUE)
+install.packages(&quot;diagram&quot;, dependencies = TRUE)</code></pre>
+<p>And then load them with the instruction</p>
+<pre class="r"><code>library(&quot;markovchain&quot;)
+library(&quot;diagram&quot;)</code></pre>
+</div>
+<div id="section-markov-chain-objects-in-r" class="section level2">
+<h2>Markov chain objects in <code>R</code></h2>
+<div id="section-create-a-mc-object-in-r" class="section level3">
+<h3>Create a MC object in <code>R</code></h3>
+<p>Here we use a simple two-state Markov chain that models the health states of an individual. In order to specify a MC object in <code>R</code>, one needs to specify the transition matrix (also called the generator) of the MC.</p>
+<p>In the following example, we create a matrix object called health_tran as the transition matrix. Note that we also specify the names of the cells for this matrix.</p>
+<pre class="r"><code>health_states &lt;- c(&quot;H&quot;, &quot;S&quot;) # names of states
+
+health_states</code></pre>
+<pre><code>## [1] &quot;H&quot; &quot;S&quot;</code></pre>
+<pre class="r"><code># note that dimention names are specified
+health_tran&lt;- matrix(data = c(-1, 1,10, -10), nrow = 2,
+              byrow = TRUE, dimnames = list(health_states, health_states))
+
+health_tran</code></pre>
+<pre><code>##    H   S
+## H -1   1
+## S 10 -10</code></pre>
+<p>Now we will create a MC based on the transition matrix we specify.</p>
+<pre class="r"><code>health_mc &lt;- new(&quot;ctmc&quot;, states = health_states, 
+                 byrow = TRUE, generator = health_tran, 
+                 name = &quot;Health-Sickness MC&quot;)
+
+health_mc</code></pre>
+<pre><code>## An object of class &quot;ctmc&quot;
+## Slot &quot;states&quot;:
+## [1] &quot;H&quot; &quot;S&quot;
+## 
+## Slot &quot;byrow&quot;:
+## [1] TRUE
+## 
+## Slot &quot;generator&quot;:
+##    H   S
+## H -1   1
+## S 10 -10
+## 
+## Slot &quot;name&quot;:
+## [1] &quot;Health-Sickness MC&quot;</code></pre>
+</div>
+<div id="section-present-the-transition-diagram-given-a-mc" class="section level3">
+<h3>Present the transition diagram given a MC</h3>
+<p>One can visualise the transitions of a MC by using the <code>plot</code> function. Here we use a three-state MC as an example.</p>
+<pre class="r"><code>disable_states &lt;- c(&quot;Health&quot;, &quot;Sick&quot;, &quot;Disable&quot;) # names of states
+
+disable_tran&lt;- matrix(data = c(
+  -0.01, 0.008, 0.002,
+  0.09, -0.1, 0.01,
+  0.03, 0.02, -0.05), 
+  nrow = 3, byrow = TRUE, dimnames = list(disable_states, disable_states))
+
+disable_mc &lt;- new(&quot;ctmc&quot;, states = disable_states, 
+                 byrow = TRUE, generator = disable_tran, 
+                 name = &quot;Disability MC&quot;)
+
+plot(disable_mc, package=&quot;diagram&quot;,box.size = 0.06)</code></pre>
+<p><img src="markovchains_files/figure-html4/unnamed-chunk-5-1.png" width="624" /></p>
+</div>
+<div id="section-exercises" class="section level3">
+<h3>Exercises</h3>
+<p>Suppose that you are given the following transition diagram for the change of an individual’s heath status (Heath, Sickness or Death).</p>
+<p><img src="markovchains_files/figure-html4/unnamed-chunk-6-1.png" width="624" /></p>
+<ol style="list-style-type: decimal">
+<li>Create a MC object that corresponds to the transition diagram.</li>
+</ol>
+<div class="tutorial-exercise" data-label="mcintro" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="22">
+<pre class="text"><code># states
+example_states &lt;- c(&quot;H&quot;, &quot;S&quot;, &quot;D&quot;)
+
+# transition matrix
+example_marix&lt;- 
+  
+# display the matrix
+example_marix
+
+# create the MC
+
+# display the transition diagram</code></pre>
+<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.timelimit":60,"exercise.checker":"NULL"}</script>
+</div>
+<div class="tutorial-exercise-support" data-label="mcintro-solution" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code># states
+example_states &lt;- c(&quot;H&quot;, &quot;S&quot;, &quot;D&quot;)
+
+# transition matrix
+example_marix&lt;- matrix(data = c(
+  -1, 0.98, 0.02,
+  4, -5, 1,
+  0,0,0), 
+  nrow = 3, byrow = TRUE, dimnames = list(example_states, example_states))
+
+# display the matrix
+example_marix
+
+# create the MC
+example_mc &lt;- new(&quot;ctmc&quot;, states = example_states, 
+                 byrow = TRUE, generator = example_marix, 
+                 name = &quot;Heath-Sickness-Death&quot;)
+
+# display the transition diagram
+plot(example_mc, package=&quot;diagram&quot;,box.size = 0.1)</code></pre>
+</div>
+<ol start="2" style="list-style-type: decimal">
+<li></li>
+</ol>
+
+<div id="htmlwidget-5d0c855796305cc93b47" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-5d0c855796305cc93b47">{"x":{"question":"Which one of the three states is an absorbing state?","answers":[{"option":"Death","correct":true,"message":null},{"option":"Sickness","correct":false,"message":"Incorrect. One can move from S to H or D, hence S is not absorbing."},{"option":"Health","correct":false,"message":"Incorret. One can move from H to S or D, hence H is not absorbing."},{"option":"There is no absorbing state.","correct":false,"message":"Incorret. D is an absorbing state since the transition rate from D to any other state is 0."}],"label":"mcintro2","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Which one of the three states is an absorbing state?","a":[{"option":"Death","correct":true,"message":null},{"option":"Sickness","correct":false,"message":"Incorrect. One can move from S to H or D, hence S is not absorbing."},{"option":"Health","correct":false,"message":"Incorret. One can move from H to S or D, hence H is not absorbing."},{"option":"There is no absorbing state.","correct":false,"message":"Incorret. D is an absorbing state since the transition rate from D to any other state is 0."}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<div id="section-properties-of-a-markov-chain" class="section level2">
+<h2>Properties of a Markov chain</h2>
+<div id="section-calculate-the-limiting-probabilities-of-a-mc" class="section level3">
+<h3>Calculate the limiting probabilities of a MC</h3>
+<p>One important calculation of a MC is the evaluation of the limiting probabilities. In <code>R</code>, one can calculate the limiting probabilities by using the <code>steadyStates</code> function.</p>
+<pre class="r"><code>steadyStates(health_mc)</code></pre>
+<pre><code>##              H          S
+## [1,] 0.9090909 0.09090909</code></pre>
+</div>
+<div id="section-obtain-the-transition-probability-matrix-of-the-embedded-mc" class="section level3">
+<h3>Obtain the transition probability matrix of the embedded MC</h3>
+<p>Given a continuous time MC, there exists an embedded MC (which is a discrete time MC by definition). One can use the <code>generatorToTransitionMatrix</code> to calculate the transition probability matrix of the embedded MC.</p>
+<p>Note that the <code>generatorToTransitionMatrix</code> applies to the generator of a MC, instead the MC object itself.</p>
+<p>With the previous example of the two-state MC, the transition probability matrix of the embedded MC is simply a diagonal matrix.</p>
+<pre class="r"><code>health_tran # generator</code></pre>
+<pre><code>##    H   S
+## H -1   1
+## S 10 -10</code></pre>
+<pre class="r"><code>generatorToTransitionMatrix(health_tran) # embedded MC</code></pre>
+<pre><code>##   H S
+## H 0 1
+## S 1 0</code></pre>
+<p>With the example of the three-state MC, the embedded MC is slightly more complex.</p>
+<pre class="r"><code>disable_tran # generator</code></pre>
+<pre><code>##         Health   Sick Disable
+## Health   -0.01  0.008   0.002
+## Sick      0.09 -0.100   0.010
+## Disable   0.03  0.020  -0.050</code></pre>
+<pre class="r"><code>generatorToTransitionMatrix(disable_tran) # embedded MC</code></pre>
+<pre><code>##         Health Sick Disable
+## Health     0.0  0.8     0.2
+## Sick       0.9  0.0     0.1
+## Disable    0.6  0.4     0.0</code></pre>
+</div>
+<div id="section-check-whether-a-mc-is-irreducible-andor-time-reversible" class="section level3">
+<h3>Check whether a MC is irreducible and/or time reversible</h3>
+<p>One can check whether a MC is irreducible and/or time reversible.</p>
+<pre class="r"><code># Is a MC irreducible?
+is.CTMCirreducible(disable_mc)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code># Is a MC time reverible?
+is.TimeReversible(disable_mc)</code></pre>
+<pre><code>## [1] FALSE</code></pre>
+</div>
+<div id="section-calculating-discrete-time-probabilities-from-a-mc-object" class="section level3">
+<h3>Calculating discrete time probabilities from a MC object</h3>
+<p>In practice, one may need to evaluate the transition probabilities over discrete time intervals. For example, given the previous three state MC model, one may want to evaluate the probabilities of an individual being disabled at time 1.5, given that he/she is healthy at time 0.</p>
+<p>In <code>R</code>, one can use the <code>probabilityatT</code> function to return a matrix of transition probabilities over a discrete time horizon of 1.5.</p>
+<pre class="r"><code>probabilityatT(disable_mc,1.5)</code></pre>
+<pre><code>##             Health       Sick     Disable
+## Health  0.98594366 0.01110376 0.002952585
+## Sick    0.12476142 0.86163944 0.013599143
+## Disable 0.04491223 0.02707360 0.928014170</code></pre>
+<p>and one can read the required probability in the first row and third column.</p>
+<p>Alternatively, one can further specify that the initial state is Health, by stating the initial state argument to be 1.</p>
+<pre class="r"><code>probabilityatT(disable_mc,1,1.5)</code></pre>
+<pre><code>## [1] 0.990426094 0.007594640 0.001979266</code></pre>
+</div>
+<div id="section-exercises-1" class="section level3">
+<h3>Exercises</h3>
+<p>Suppose that the change of weather patterns of City X follows a continuous time MC with three states: Sunny (S), Cloudy (C), and Rainy (R). The MC object, <code>weather_states</code>, has been created as follows. Note the unit of time is day.</p>
+<pre class="r"><code>weather_states &lt;- c(&quot;S&quot;, &quot;R&quot;, &quot;C&quot;)
+
+weather_tran&lt;- matrix(data = c(
+  -0.1, 0.08, 0.02,
+  0.35, -0.5, 0.15,
+  0.2,0.2,-0.4), 
+  nrow = 3, byrow = TRUE, dimnames = list(weather_states, weather_states))
+
+weather_mc &lt;- new(&quot;ctmc&quot;, states = weather_states, 
+                 byrow = TRUE, generator = weather_tran, 
+                 name = &quot;Sunny-Cloudy-Rainy&quot;)</code></pre>
+<ol style="list-style-type: decimal">
+<li>In the long run, what is the proportion of time where the weather in City X is sunny?</li>
+</ol>
+<div class="tutorial-exercise" data-label="mcprop" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="2">
+<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.timelimit":60,"exercise.checker":"NULL"}</script>
+</div>
+<div class="tutorial-exercise-support" data-label="mcprop-solution" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>steadyStates(weather_mc)</code></pre>
+</div>
+<ol start="2" style="list-style-type: decimal">
+<li></li>
+</ol>
+<p>Given that the following <code>R</code> codes and results, answer the multiple choice question at the end.</p>
+<pre class="r"><code>probabilityatT(weather_mc,3)</code></pre>
+<pre><code>##           S         R          C
+## S 0.8268973 0.1198460 0.05325675
+## R 0.5467253 0.3100969 0.14317776
+## C 0.4429703 0.2028500 0.35417970</code></pre>
+
+<div id="htmlwidget-92d21ac0ac4d8cd122d3" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-92d21ac0ac4d8cd122d3">{"x":{"question":"Which one of the following statements is correct?","answers":[{"option":"Given that the weather is sunny right now, the probability that it will be sunny for 3 days is 82.68973%","correct":false,"message":"0.8268973 is the probability that the weather will be sunny at exactly day 3 (which includes the events that the weather can experience multiple transitions within the 3 days)."},{"option":"If the weather is rainy right now, then there is a 31.00969% chance that it will be Rainy in 1 day.","correct":false,"message":"The R codes only compute the probabilities for a 3-day horizon."},{"option":"If the weather is cloudy, then it is most likely that the weather will be Sunny in 3 days.","correct":true,"message":null}],"label":"mcprop2","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Which one of the following statements is correct?","a":[{"option":"Given that the weather is sunny right now, the probability that it will be sunny for 3 days is 82.68973%","correct":false,"message":"0.8268973 is the probability that the weather will be sunny at exactly day 3 (which includes the events that the weather can experience multiple transitions within the 3 days)."},{"option":"If the weather is rainy right now, then there is a 31.00969% chance that it will be Rainy in 1 day.","correct":false,"message":"The R codes only compute the probabilities for a 3-day horizon."},{"option":"If the weather is cloudy, then it is most likely that the weather will be Sunny in 3 days.","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<div id="section-simulation-and-parameter-estimation-of-a-markov-chain" class="section level2">
+<h2>Simulation and parameter estimation of a Markov chain</h2>
+<div id="section-simulate-mc-transitions" class="section level3">
+<h3>Simulate MC transitions</h3>
+<p>The <code>rctmc</code> function allows one to simulate MC transitions. Now let’s use the two-state Health-Sick model, and the following <code>R</code> codes will simulate the transition from time 0 to 20. Here one needs to sate the MC object in the <code>ctmc</code> argument, and also provide the length of time in the <code>T</code> argument. While the <code>T</code> argument is used, one needs to set <code>n</code> to be Inf.</p>
+<pre class="r"><code>rctmc(n = Inf, ctmc = health_mc, T = 10)</code></pre>
+<pre><code>## [[1]]
+##  [1] &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot;
+## 
+## [[2]]
+##  [1] 0.000000 3.298867 3.404713 5.313298 5.370693 6.187490 6.251865
+##  [8] 6.753444 6.843589 7.483939 7.548988 9.517406 9.524186</code></pre>
+<p>Alternative, one can specify the number of transitions (that is, <code>n</code>). In this case, one no longer need <code>T</code>. Furthermore, one can also provide the distribution of the initial states.</p>
+<pre class="r"><code>rctmc(n = 5, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = FALSE)</code></pre>
+<pre><code>## [[1]]
+## [1] &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot;
+## 
+## [[2]]
+## [1] 0.04491957 1.44184325 1.78038523 3.21029587 3.22995894</code></pre>
+<pre class="r"><code>rctmc(n = 5, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = TRUE)</code></pre>
+<pre><code>## [[1]]
+## [1] &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot;
+## 
+## [[2]]
+## [1] 0.00000000 0.02352624 0.41904889 0.63878636 2.75378404 2.93132920</code></pre>
+<p>If we choose ‘include.T0 = FALSE’, then the output will start from the first transition (e.g. if the first state is S, then it means at that time there is a transition from H to S); if ‘include.T0 = TRUE’ is used, then the output will start from time 0 (that is, the output will show the first state at time 0).</p>
+<p>One can plot the simulated MC chain by using the <code>plot</code> function. Given that the states are not numerical, one needs to specify numerical values on the y-axis corresponding to the states. In the following example, we plot H and S states at 2 and 1.</p>
+<pre class="r"><code>health_simu&lt;-rctmc(n = 100, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = TRUE)
+
+health_y&lt;-(health_simu[[1]]==&quot;H&quot;)*2+(health_simu[[1]]==&quot;S&quot;)*1
+
+plot(health_simu[[2]],health_y,xlab=&quot;time of transition&quot;, ylab=&quot;States&quot;,yaxt=&quot;n&quot;)
+
+axis(2, at=c(1,2),labels=c(&quot;S&quot;,&quot;H&quot;))</code></pre>
+<p><img src="markovchains_files/figure-html4/unnamed-chunk-17-1.png" width="624" /></p>
+</div>
+<div id="section-parameter-estimation-of-a-mc" class="section level3">
+<h3>Parameter estimation of a MC</h3>
+<p>One can use the <code>ctmcFit</code> function to estimate the parameters of a MC. In the following example, we estimate the parameters of the two-state MC given the simulated path we just create.</p>
+<pre class="r"><code>health_fit&lt;-ctmcFit(health_simu)
+
+health_fit$estimate</code></pre>
+<pre><code>## An object of class &quot;ctmc&quot;
+## Slot &quot;states&quot;:
+## [1] &quot;H&quot; &quot;S&quot;
+## 
+## Slot &quot;byrow&quot;:
+## [1] TRUE
+## 
+## Slot &quot;generator&quot;:
+##           H          S
+## H -1.117515   1.117515
+## S 12.608632 -12.608632
+## 
+## Slot &quot;name&quot;:
+## [1] &quot;&quot;</code></pre>
+<p>Note that the data that is provided for the <code>ctmcFit</code> should include the initial time 0. In the above example, we specify <code>include.T0 = TRUE</code>, therefore this condition is satisfied for this simulated dataset.</p>
+</div>
+<div id="section-exercise" class="section level3">
+<h3>Exercise</h3>
+<p>Use the <code>disable_mc</code> MC object. Simulate the transitions of health-sickness-disability for 100 days. You should use the limiting probabilities as the initial distribution.</p>
+<div class="tutorial-exercise" data-label="mcsimu" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="10">
+<pre class="text"><code># calculate the limiting probabilities
+
+
+# simulate the MC for 100 days
+
+
+# display the results</code></pre>
+<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.timelimit":60,"exercise.checker":"NULL"}</script>
+</div>
+<div class="tutorial-exercise-support" data-label="mcsimu-solution" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code># calculate the limiting probabilities
+disable_limit&lt;-steadyStates(disable_mc)
+
+# simulate the MC for 3000 days
+simu&lt;-rctmc(n = Inf, ctmc = disable_mc, initDist = disable_limit, T=100, include.T0 = TRUE)
+
+# display the results
+simu</code></pre>
+</div>
+<p>Note that if you run your code multiple time you will get every time a new realisation of the Markov chain</p>
+<!-- 2. Now we perform the above simulation for up to 10000 days, and the result is stored at a variable called `simu2`. The parameter estimation is performed as follows. -->
+<!-- ```{r} -->
+<!-- # calculate the limiting probabilities -->
+<!-- disable_limit<-steadyStates(disable_mc) -->
+<!-- # simulate the MC for 3000 days -->
+<!-- simu2<-rctmc(n = Inf, ctmc = disable_mc, initDist = disable_limit, T=10000, include.T0 = TRUE) -->
+<!-- # estimate the parameters -->
+<!-- simu2_fit<-ctmcFit(simu2) -->
+<!-- # display the results -->
+<!-- simu2_fit -->
+<!-- ``` -->
+<!-- ```{r mcest, echo=FALSE} -->
+<!-- question("Which one of the following information is not provided in the outpus?", -->
+<!--   answer("The lower bound of the confidence interval of the estiamted transition rates.", correct = TRUE), -->
+<!--   answer("The upper bound of the confidence interval of the estiamted transition rates out of each state.", message = "Incorrect. This is provided as `$errors$lambdaConfidenceInterval$upperEndpointVector`"), -->
+<!--   answer("The estimated parameters of the generator.",message = "Incorrect. This is provided as `$estimate`"), -->
+<!--   allow_retry = TRUE -->
+<!-- ) -->
+<!-- ``` -->
+</div>
+</div>
+<div id="section-references" class="section level2">
+<h2>References</h2>
+
+<script type="application/shiny-prerendered" data-context="server-start">
+library(learnr)
+library("markovchain")
+library("diagram")
+tutorial_options(exercise.timelimit = 60)
+knitr::opts_knit$set(root.dir = getwd()) 
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+learnr:::register_http_handlers(session, metadata = NULL)
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+`tutorial-exercise-mcintro-result` <- learnr:::setup_exercise_handler(reactive(req(input$`tutorial-exercise-mcintro-code-editor`)), session)
+output$`tutorial-exercise-mcintro-output` <- renderUI({
+  `tutorial-exercise-mcintro-result`()
+})
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+`tutorial-exercise-mcprop-result` <- learnr:::setup_exercise_handler(reactive(req(input$`tutorial-exercise-mcprop-code-editor`)), session)
+output$`tutorial-exercise-mcprop-output` <- renderUI({
+  `tutorial-exercise-mcprop-result`()
+})
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+`tutorial-exercise-mcsimu-result` <- learnr:::setup_exercise_handler(reactive(req(input$`tutorial-exercise-mcsimu-code-editor`)), session)
+output$`tutorial-exercise-mcsimu-output` <- renderUI({
+  `tutorial-exercise-mcsimu-result`()
+})
+</script>
+ <!--html_preserve-->
+<script type="application/shiny-prerendered" data-context="dependencies">
+{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/cerulean.min.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["pagedtable"]},{"type":"character","attributes":{},"value":["1.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/pagedtable-1.1"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/pagedtable.js"]},{"type":"character","attributes":{},"value":["css/pagedtable.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["highlightjs"]},{"type":"character","attributes":{},"value":["1.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["href"]}},"value":[{"type":"character","attributes":{},"value":["markovchains_files/highlightjs-1.1"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["highlight.js"]},{"type":"character","attributes":{},"value":["textmate.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-format"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmarkdown/templates/tutorial/resources"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-format.js"]},{"type":"character","attributes":{},"value":["tutorial-format.css","rstudio-theme.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["font-awesome"]},{"type":"character","attributes":{},"value":["4.5.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/font-awesome-4.5.0"]}]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["css/font-awesome.min.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["ace"]},{"type":"character","attributes":{},"value":["1.2.6"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/ace"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["ace.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["clipboardjs"]},{"type":"character","attributes":{},"value":["1.5.15"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/clipboardjs"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["clipboard.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]},{"type":"character","attributes":{},"value":["0.8"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["www"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["htmlwidgets.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["quiz-binding"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["quiz.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/bootstrap.min.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["slickquiz"]},{"type":"character","attributes":{},"value":["1.5.20"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets/lib/slickquiz"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/slickQuiz.js"]},{"type":"character","attributes":{},"value":["css/slickQuiz.css","css/slickQuizTutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["ace"]},{"type":"character","attributes":{},"value":["1.2.6"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/ace"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["ace.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["clipboardjs"]},{"type":"character","attributes":{},"value":["1.5.15"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/clipboardjs"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["clipboard.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]},{"type":"character","attributes":{},"value":["0.8"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["www"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["htmlwidgets.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["quiz-binding"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["quiz.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/bootstrap.min.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["slickquiz"]},{"type":"character","attributes":{},"value":["1.5.20"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets/lib/slickquiz"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/slickQuiz.js"]},{"type":"character","attributes":{},"value":["css/slickQuiz.css","css/slickQuizTutorial.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["ace"]},{"type":"character","attributes":{},"value":["1.2.6"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/ace"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["ace.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["clipboardjs"]},{"type":"character","attributes":{},"value":["1.5.15"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/clipboardjs"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["clipboard.min.js"]},{"type":"NULL"},{"type":"NULL"},{"type":"NULL"},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]}]}
+</script>
+<!--/html_preserve-->
+<div id="section-refs" class="references">
+<div id="section-ref-Soetaert2017">
+<p>Soetaert, Karline. 2017. <em>Diagram: Functions for Visualising Simple Graphs (Networks), Plotting Flow Diagrams</em>. <a href="https://CRAN.R-project.org/package=diagram" class="uri">https://CRAN.R-project.org/package=diagram</a>.</p>
+</div>
+<div id="section-ref-Spedicato2017">
+<p>Spedicato, Giorgio Alfredo. 2017. “Discrete Time Markov Chains with R.” <em>The R Journal</em>, July. <a href="https://journal.r-project.org/archive/2017/RJ-2017-036/index.html" class="uri">https://journal.r-project.org/archive/2017/RJ-2017-036/index.html</a>.</p>
+</div>
+</div>
+</div>
+
+</div> <!-- topics -->
+
+<div class="topicsContainer">
+<div class="topicsPositioner">
+<div class="band">
+<div class="bandContent topicsListContainer">
+
+<!-- begin doc-metadata -->
+<div id="doc-metadata">
+<h2 class="title toc-ignore" style="display:none;">Continuous Time Markov Chains</h2>
+</div>
+<!-- end doc-metadata -->
+
+</div> <!-- bandContent.topicsListContainer -->
+</div> <!-- band -->
+</div> <!-- topicsPositioner -->
+</div> <!-- topicsContainer -->
+
+
+</div> <!-- bandContent page -->
+</div> <!-- pageContent band -->
+
+
+
+
+<script>
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+</script>
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+
+</html>

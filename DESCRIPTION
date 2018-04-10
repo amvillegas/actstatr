@@ -12,5 +12,7 @@ LazyData: true
 Imports:
     lifecontingencies,
     survival,
-    KMsurv
+    KMsurv,
+    markovchain,
+    diagram
 Suggests: testthat
