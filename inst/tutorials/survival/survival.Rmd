@@ -171,7 +171,7 @@ question("Does the ordering between the KM and NA lines above make sense?",
 
 In order to conduct Log-rank and Peto-Peto tests for the difference between two survival curves, you will need to use the `survdiff` function. Setting the argument `rho` equal to zero will specify a Log-rank test. 
 
-For instance. we can apply the Log-rank test to test if the survival times for the two types of tumours in the `tongue` dataset are the same:
+For instance, we can apply the Log-rank test to test if the survival times for the two types of tumours in the `tongue` dataset are the same:
 
 ```{r}
 G2 <- Surv(time, delta)
@@ -252,8 +252,8 @@ peto_alloauto
 question("At a critical value of 5%, what can you conclude from the test results?",
          answer("The Peto-Peto test suggests significant difference, while the log-rank test does not.", message = "Both p-values are larger than 5% so there is no significant difference."),
          answer("The log-rank test suggests significant difference, while the Peto-Peto test does not.",message = "Both p-values are larger than 5% so there is no significant difference."),
-         answer("Both test do not suggest significant difference.", correct = TRUE),
-         answer("Both test suggest significant difference.", message = "Both p-values are larger than 5% so there is no significant difference."),
+         answer("Both tests do not suggest significant difference.", correct = TRUE),
+         answer("Both tests suggest significant difference.", message = "Both p-values are larger than 5% so there is no significant difference."),
          allow_retry = TRUE
 )
 ```
@@ -311,7 +311,7 @@ question("Which one of the following statements is correct?",
 ```
 
 ```{r coxreg3, echo=FALSE}
-question("Suppose that A is one year elder than B and both of them are in stage 2. What is the ratio of mortality rate between A and B (approximately) given the numerical output of the fitting? Does this change if they are both at stage 3 (assuming that the Cox model is correct)?",
+question("Suppose that A is one year older than B and both of them are in stage 2. What is the ratio of mortality rate between A and B (approximately) given the numerical output of the fitting? Does this change if they are both at stage 3 (assuming that the Cox model is correct)?",
          answer("0.01908, Yes", message = "The ratio should be 1.01908 (which is exp(coef) or 1+coef approximately). Furthermore, the ratio stays the same due to the Cox regression assumption of proportionality."),
          answer("1.01908, Yes", message = "The ratio stays the same due to the Cox regression assumption of proportionality."),
          answer("0.01908, No", message = "The ratio should be 1.01908 (which is exp(coef) or 1+coef approximately)."),
