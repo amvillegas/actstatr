@@ -47,14 +47,14 @@ library("diagram")
 
 Here we use a simple two-state Markov chain that models the health states of an individual. In order to specify a MC object in `R`, one needs to specify the transition matrix (also called the generator) of the MC.
 
-In the following example, we create a matrix object called health_tran as the transition matrix. Note that we also specify the names of the cells for this matrix.
+In the following example, we create a matrix object called `health_tran` as the transition matrix. Note that we also specify the names of the cells for this matrix.
 
 ```{r}
 health_states <- c("H", "S") # names of states
 
 health_states
 
-# note that dimention names are specified
+# note that dimension names are specified
 health_tran<- matrix(data = c(-1, 1,10, -10), nrow = 2,
               byrow = TRUE, dimnames = list(health_states, health_states))
 
@@ -89,7 +89,7 @@ disable_mc <- new("ctmc", states = disable_states,
                  byrow = TRUE, generator = disable_tran, 
                  name = "Disability MC")
 
-plot(disable_mc, package="diagram",box.size = 0.06)
+plot(disable_mc, package="diagram", box.size = 0.06)
 ```
 
 
@@ -278,13 +278,13 @@ question("Which one of the following statements is correct?",
 
 ### Simulate MC transitions
 
-The `rctmc` function allows one to simulate MC transitions. Now let's use the two-state Health-Sick model, and the following `R` codes will simulate the transition from time 0 to 20. Here one needs to sate the MC object in the `ctmc` argument, and also provide the length of time in the `T` argument. While the `T` argument is used, one needs to set `n` to be Inf.
+The `rctmc` function allows one to simulate MC transitions. Now let's use the two-state Health-Sick model, and the following `R` codes will simulate the transition from time 0 to 20. Here one needs to state the MC object in the `ctmc` argument, and also provide the length of time in the `T` argument. While the `T` argument is used, one needs to set `n` to be `Inf`. Here, `n` represents the number of samples to generate.
 
 ```{r}
-rctmc(n = Inf, ctmc = health_mc, T = 10)
+rctmc(n = Inf, ctmc = health_mc, T = 20)
 ```
 
-Alternative, one can specify the number of transitions (that is, `n`). In this case, one no longer need `T`. Furthermore, one can also provide the distribution of the initial states.
+Alternatively, one can specify the number of transitions (that is, `n`). In this case, `T` is no longer required. Furthermore, one can also provide the distribution of the initial states.
 
 ```{r}
 rctmc(n = 5, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = FALSE)
@@ -292,23 +292,23 @@ rctmc(n = 5, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = FALSE)
 rctmc(n = 5, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = TRUE)
 ```
 
-If we choose 'include.T0 = FALSE', then the output will start from the first transition (e.g. if the first state is S, then it means at that time there is a transition from H to S); if 'include.T0 = TRUE' is used, then the output will start from time 0 (that is, the output will show the first state at time 0).
+If we choose `include.T0 = FALSE`, then the output will start from the first transition (e.g. if the first state is S, then it means at that time there is a transition from H to S); if `include.T0 = TRUE` is used, then the output will start from time 0 (that is, the output will show the first state at time 0).
 
 One can plot the simulated MC chain by using the `plot` function. Given that the states are not numerical, one needs to specify numerical values on the y-axis corresponding to the states. In the following example, we plot H and S states at 2 and 1.
 
 ```{r}
-health_simu<-rctmc(n = 100, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = TRUE)
+health_simu <- rctmc(n = 100, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = TRUE)
 
-health_y<-(health_simu[[1]]=="H")*2+(health_simu[[1]]=="S")*1
+health_y <- (health_simu[[1]]=="H")*2 + (health_simu[[1]]=="S")*1
 
-plot(health_simu[[2]],health_y,xlab="time of transition", ylab="States",yaxt="n")
+plot(health_simu[[2]], health_y, xlab="time of transition", ylab="States", yaxt="n")
 
-axis(2, at=c(1,2),labels=c("S","H"))
+axis(2, at=c(1,2), labels=c("S","H"))
 ```
 
 ### Parameter estimation of a MC
 
-One can use the `ctmcFit` function to estimate the parameters of a MC. In the following example, we estimate the parameters of the two-state MC given the simulated path we just create.
+One can use the `ctmcFit` function to estimate the parameters of a MC. In the following example, we estimate the parameters of the two-state MC given the simulated path we just created.
 
 ```{r}
 health_fit<-ctmcFit(health_simu)
