@@ -14,5 +14,7 @@ Imports:
     survival,
     KMsurv,
     markovchain,
-    diagram
+    diagram,
+    demography,
+    splines
 Suggests: testthat

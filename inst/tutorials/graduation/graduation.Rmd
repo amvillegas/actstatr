@@ -1,0 +1,702 @@
+---
+title: "Graduation"
+output: learnr::tutorial
+bibliography: library.bib
+markdown_extensions:
+    - admonition  
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library("learnr")
+library("demography") 
+library("splines") 
+tutorial_options(exercise.timelimit = 60)
+knitr::opts_knit$set(root.dir = getwd()) 
+```
+
+## Introduction
+
+In this manual we aim to discuss the implementation in `R` of the main graduation techniques as well as the implementation of some of the statistical tests  used to test the appropriateness of a graduation. 
+
+For illustrative purposes we will aim to replicate some of the results of the graduation of the *Australian Life Tables 2010-12)* (ALT2010-12) produced by the @AGA2014. The report discussing the main features of the construction of the  ALT2010-12 can be seen at http://www.aga.gov.au/publications/life_table_2010-12/default.asp. 
+
+
+It is assumed that the reader has a basic understanding of working in `R`. For this module, we will need the **demography** [@Hyndman2014] package. Note that this package has been loaded in the current R workspace. Therefore you can utilise the capacities of the package without explicitly loading it.
+
+However, if you are using this package outside this tutorial remember to first install the package with the code:
+
+```{r eval=FALSE}
+install.packages("demography", dependencies = TRUE)
+```
+
+And then load it with the instruction
+
+```{r eval=FALSE}
+library("demography")
+```
+
+
+## Data
+
+Mortality data for Australia  can be obtained from the @HumanMortalityDatabase2014, which is a very useful resource for accessing mortality data from several countries in the world. To be able to download data from the Human Mortality Database please register on their website http://www.mortality.org/. Take note of your "username" and "password".  
+
+
+To download the mortality data for Australia type the following commands, noting that `"username"` and `"password"` need to be replaced by your logging information from the Human Mortality Database:
+
+```{r defineAUSdataShow, eval=FALSE}
+library(demography) 
+AUSdata <- hmd.mx(country = "AUS", username = "username", password = "password")
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+load("AUSdata.RData")
+```
+
+A quick graph of the historical evolution of the mortality rates for Australian men can be produced with the code:
+
+```{r}
+plot(AUSdata, series = "male")
+```
+
+The ALT2010-12 uses mortality data for the years 2010-2012. The total number of deaths, the central exposed to risk and the central mortality rates for this period can be calculated as follows:
+
+```{r}
+Ext <- AUSdata$pop$male
+mxt <- AUSdata$rate$male
+Dxt <- round(Ext * mxt)
+Ex <- rowSums(Ext[, c("2010", "2011", "2012")])
+Dx <- rowSums(Dxt[, c("2010", "2011", "2012")])
+mx <- Dx/Ex 
+
+```
+
+Plots by age of the number of deaths, the central exposed to risk and the central mortality rates can be produced as follows:
+
+```{r}
+age <- AUSdata$age
+plot(age, Dx, type = "l", xlab = "age", ylab = "Number of deaths", 
+     main = "Australian Men: 2010-2012")
+plot(age, Ex, type = "l", xlab = "age", ylab = "Exposed to risk", 
+     main = "Australian Men: 2010-2012")
+plot(log(mx), type = 'l' , xlab = "age", ylab = "Central mortality rate (log scale)", 
+     main = "Australian Men: 2010-2012")
+```
+
+Compare these lasts two plots with [Figure 15](http://www.aga.gov.au/publications/life_table_2010-12/06-Part2.asp#P574_39256) and [Figure 16](http://www.aga.gov.au/publications/life_table_2010-12/06-Part2.asp#P586_41264) in the ALT2010-2012 Report.
+
+## Graduation - parametric laws
+
+We will now show how to implement in `R` the Gompertz and Makeham models.
+
+The main part of the graduation of the ALT2010-2012 focused on the age range 2-105  so we will apply these methods to this age range. The following code extracts this range from the data:
+
+```{r}
+x <- 2:105
+mx <- mx[as.character(x)]
+Ex <- Ex[as.character(x)]
+Dx <- Dx[as.character(x)]
+```
+
+
+### Gompertz laws
+
+Under the Gompertz law, the force of mortality is assumed to be given by $$\mu_x = BC^x$$. In order to fit the model, it is convenient to rewrite the Gompertz law as $$\mu_x = e^{\beta_0 + \beta_1 x},$$ where $B=e^{\beta_0}$ and $C = e^{\beta_1}$.  
+
+Weighted least squares estimates of parameters $\beta_0$ and $\beta_1$ can be obtained using the function `nls`, which is a general function for non-linear least squares estimation. This can be done with the following code:
+
+```{r}
+gompertz <- nls(mx ~ exp(b0 + b1*x), start = list(b0 = 1, b1 = 0), weights = Ex/mx)
+gompertz
+```
+
+In the above code, it is worth noticing that we are using weights $w_x=1/var(\tilde{\mu}_x)\approx E_x^c/m_x$. 
+
+We can obtain and plot the graduated (fitted) mortality rates as follows:
+
+```{r}
+mx_gompertz <- fitted(gompertz)
+plot(x, log(mx), pch = 20, xlab = "age", ylab = "Central mortality rate (log scale)",
+     main = "Australian Men: Gompertz law",ylim = range(-11, 0))
+lines(x, log(mx_gompertz), col ='blue')
+```
+
+The Gompertz law assumes linearity of the force of mortality on a log-scale. This is clearly not appropriate for the full age range, but could be reasonable if we were graduating only adult ages, say from age 50 onwards. 
+
+
+### Makeham law
+
+Under the Makeham law, the force of mortality is assumed to be given by $$\mu_x = A + BC^x.$$
+As with the Gompertz law, it is convenient to rewrite the Makeham law as $$\mu_x = A + e^{\beta_0 + \beta_1 x}$$ to facilitate its fitting in `R`. Weighted least squares estimates of parameters of $A$, $\beta_0$ and $\beta_1$ can be obtained as follows:
+
+```{r}
+makeham  <- nls(mx ~ A + exp(b0 + b1*x), start = list(A = 0, b0 = coef(gompertz)[1], b1 = coef(gompertz)[2]), weights = Ex/mx)
+makeham
+```
+
+In the above code note that we have used the parameter estimates of the Gompertz model as our starting parameter values. 
+
+We can obtain and plot the graduated mortality rates as follows:
+
+```{r}
+mx_makeham <- fitted(makeham)
+plot(x,log(mx),pch=20,xlab="age",ylab="Central mortality rate (log scale)",
+     main="Australian Men: Makeham law",ylim = range(-11,0))
+lines(x,log(mx_makeham),col='blue')
+```
+
+Although the Makeham law shows a better fit to the data than the Gompertz law, it still doesn't look appropriate as it cannot capture the accident hump, nor child mortality. The Makeham law might be a reasonable model if we were considering ages from 20 onwards.
+
+### Exercises 
+
+```{r parastate, echo=FALSE}
+question("Which one of the following statements is correct?",
+  answer("One cannot use the standard linear least squares (i.e. function `ls`) for fitting the Gompertz. This is because the Gompertz model is not a linear function of age",message = "Incorret. One can take logarithms at both side of the Gompertz model, which results in a linear representation."),
+  answer("The  weighted residual sum of squares for the Makeham model is expected to be lower than that of the Gompertz model. This is because the Gompertz model can be viewed as a special case of the Makeham model where A=0",correct = TRUE),
+  answer("In fitting the Makeham model, the initial estimates of beta 0 and beta 1 are chosen as 0.",message = "Incorret. The initial estimates of these two are chosen as the corresponding values from the fittin results of the Gompertz model."),
+  allow_retry = TRUE
+)
+```
+
+
+```{r gom, echo=FALSE}
+question("Given the results from the Gompertz law fitting, what are the values of $B$ and $C$?",
+  answer("0.00001477166 and 1.10815891153",correct = TRUE),
+  answer("-11.1228 and 0.10274", message = "Incorrect. These are the values for the beta's."),
+  answer("67697.1932906 and 1.10815891153", message = "Incorret. Note that the sign for beta 0 is negative."),
+  allow_retry = TRUE
+)
+```
+
+
+```{r residuals, echo=FALSE}
+question("Which one of the following codes can be used to calculate the weighted residual sum of squares for the Makeham model?",
+  answer("`sum((mx_makeham - mx)^2)`",message = "Incorret. This does not include the weights for the residuals."),
+  answer("`sum((mx_makeham - mx)^2*Ex/mx)`",correct = TRUE),
+  answer("`sum((mx_makeham - mx)*Ex/mx)`",message = "Incorret. This does not calculate the squared residuals."),
+  answer("`(mx_makeham - mx)^2*Ex/mx`",message = "Incorret. This does not return the sum of the squared residuals."),  
+  allow_retry = TRUE
+)
+```
+
+
+## Graduation - splines
+
+We will now show how to implement in R the Natural Cubic Splines and Smoothing Splines. 
+
+We will use the same data set as that of the previous section.
+
+### Regression splines 
+
+The graduation of the ALT2010-2012 was carried out using natural cubic splines. Here we illustrate how to fit such an approach in `R`.  
+
+The **splines** package provides functions for fitting cubic splines and natural cubic splines. This package uses  [B-Splines](https://en.wikipedia.org/wiki/B-spline), which are a convenient way of representing splines functions.
+
+One of the main issues with spline graduation is selecting the position of the knots. In the ALT2010-2012 graduation for males, the knots were placed at ages 7, 12, 16,	18,	20,	32,	53,	54,	61,	66,	77,	90,	95.  For simplicity, we will use the same knots in this exercise.
+
+Using function `ns`, the basis (regressors) for the natural cubic splines can be created and plotted as follows:
+
+```{r}
+library(splines) 
+knots <- c(7, 12, 16, 18, 20, 32, 53, 54, 61, 66, 77, 90, 95)
+cubic_basis <- ns(x, knots = knots)
+matplot(x, cubic_basis, type = "l", xlab = "age (x)", ylab = "phi_i(x)", 
+        main = "Cubic B-spline basis")
+```
+
+Fitting a natural cubic spline to the mortality rates reduces then to estimating the  following linear regression model:
+
+$$\mu_x = \beta_0 + \sum_i \beta_i \phi_i(x) + \epsilon_x$$
+
+where the $\phi_i(x)$ are the functions plotted in the above graph. Hence, weighted least squares estimates of the parameters $\beta_i$ can easily be obtained using the standard linear regression function `lm`:
+
+```{r}
+cubSpline  <- lm(mx ~ cubic_basis, weights = Ex / mx )
+cubSpline
+```
+
+We can obtain and plot the graduated mortality rates as follows:
+
+```{r}
+mx_cubSpline <- fitted(cubSpline)
+plot(x, log(mx), pch = 20,  xlab = "age", ylab = "Central mortality rate (log scale)",
+     main = "Australian Men: Natural cubic spline", ylim = range(-11,0))
+lines(x, log(mx_cubSpline), col = 'blue')
+```
+
+This is clearly a much better fit than the one obtained using the Gompertz or Makeham law.
+
+
+### Smoothing splines
+
+Cubic splines also arise as the solution of the following variation problem 
+
+$$\min\limits_{f} \sum_{i=1}^n\left[y_i - f(x_i)\right]^2+\lambda \int_{x_1}^{x_n}\left[f''(t)\right]^2, \mathrm{d} t$$
+
+where $\lambda$ is a smoothing parameter capturing the trade-off between goodness-of-fit and smoothness. This non-parametric graduation approach can be implemented in `R` with the function `smoothing.spline`. The code below fits a smoothing spline to the Australian men data.
+
+```{r}
+smSpline <- smooth.spline(x, mx, spar = 0.4)
+smSpline
+```
+
+In the code above, we note that `spar` is the smoothing parameter with $\lambda = r * 256^{(3*spar - 1)}$ for an appropriately defined value of $r$. Determining the adequate smoothing parameter is the main complication of smoothing splines, but after some trial and error  `spar=0.4` seems to produce satisfactory results for this particular application.
+
+
+We can obtain and plot the graduated mortality rates as follows:
+
+```{r}
+mx_smSpline <- fitted(smSpline)
+plot(x, log(mx), pch = 20,  xlab = "age", ylab = "Central mortality rate (log scale)",
+     main = "Australian Men: Smoothing spline", ylim = range(-11,0))
+lines(x, log(mx_smSpline), col = 'blue')
+```
+
+### Comparison of graduations
+
+A plot comparing the four sets of graduated rates can be obtained as follows:
+
+```{r}
+plot(x, log(mx), pch = 20,  xlab = "age", ylab = "Central mortality rate (log scale)",main = "Australian Men", ylim = range(-11,0))
+lines(x, log(mx_gompertz), col = 2)
+lines(x, log(mx_makeham), col = 3)
+lines(x, log(mx_cubSpline), col = 4)
+lines(x, log(mx_smSpline), col = 5)
+legend("topleft", legend = c("Gompert", "Makeham", "Natural Cubic Spline", 
+                             "Smoothing Spline"),  col = 2:5, lty = 1)
+```
+
+We see that clearly, the Gompertz and Makeham graduations are inappropriate, while the natural cubic spline and the smoothing spline are very similar and seem reasonable. 
+
+### Exercises
+
+```{r splineSetup, include=FALSE}
+load("AUSdata.RData")
+Ext <- AUSdata$pop$male
+mxt <- AUSdata$rate$male
+Dxt <- round(Ext * mxt)
+Ex <- rowSums(Ext[, c("2010", "2011", "2012")])
+Dx <- rowSums(Dxt[, c("2010", "2011", "2012")])
+mx <- Dx/Ex 
+x <- 2:105
+mx <- mx[as.character(x)]
+Ex <- Ex[as.character(x)]
+Dx <- Dx[as.character(x)]
+```
+
+1. Modify the codes for fitting the smooth splines. Consider the following two cases.
+
+- **Case 1:** take `spar=-10` (i.e. $\lambda \approx 0$)
+- **Case 2:** take `spar=2`, (i.e. $\lambda$ very large)
+
+```{r smooth, exercise=TRUE,exercise.lines=11, exercise.setup = "splineSetup"}
+# Case I: lambda is close to 0
+smSpline1 <- 
+mx_smSpline1 <- fitted(smSpline1)
+# Case II: lambda is very large
+smSpline2 <- 
+mx_smSpline2 <- fitted(smSpline2)
+
+# Compare the smoothing splines
+plot(x, log(mx), pch = 20,  xlab = "age", ylab = "Central mortality rate (log scale)", main = "Australian Men: Smoothing spline", ylim = range(-11,0))
+lines(x, log(mx_smSpline1), col = 'blue')
+lines(x, log(mx_smSpline2), col = 'red')
+```
+
+```{r smooth-solution}
+# Case I: lambda is close to 0
+smSpline1 <- smooth.spline(x, mx, spar = -10)
+mx_smSpline1 <- fitted(smSpline1)
+# Case II: lambda is very large
+smSpline2 <- smooth.spline(x, mx, spar = 2)
+mx_smSpline2 <- fitted(smSpline2)
+
+# Compare the smoothing splines
+plot(x, log(mx), pch = 20,  xlab = "age", ylab = "Central mortality rate (log scale)", main = "Australian Men: Smoothing spline", ylim = range(-11,0))
+lines(x, log(mx_smSpline1), col = 'blue')
+lines(x, log(mx_smSpline2), col = 'red')
+```
+
+
+2. 
+
+```{r smooth2, echo=FALSE}
+question("Which one of the following statements regarding the above results is true?",
+  answer("If the value of lambda is close to 0, then the fitted splines will tend to be very smooth.",message = "Incorret. If lambda is small, then there is less weight on the smoothness of the fitting. Hence the results will be close to the raw mortality rates."),
+  answer("The value of lambda determines the balance between smoothness and adherance to the raw rates. The larger lambda is, the more weight is applied to smoothness.",correct = TRUE),
+   answer("Generally speaking, one prefers to choose lambda as small as possible.",message = "Incorret. If lambda is too small, then the fitted splines won't be reasonably smooth."), 
+  answer("If the value of lambda is large, then the fitted splines will tend to be close to the raw mortality rates.",message = "Incorret. If lambda is large, then there is heavy weight on the smoothness of the fitting. Hence the results will be close to smooth."),
+  allow_retry = TRUE
+)
+```
+
+## Statistical test
+We will now test formally the four set of graduated rates we have produced, using the different statistical test. Most of the statistical test are based on the standardised deviations, which can be computed as follows
+
+```{r}
+zx_makeham <- (Dx - Ex * mx_makeham) / sqrt(Ex * mx_makeham)
+zx_gompertz <- (Dx - Ex * mx_gompertz) / sqrt(Ex * mx_gompertz)
+zx_cubSpline <- (Dx - Ex * mx_cubSpline) / sqrt(Ex * mx_cubSpline)
+zx_smSpline <- (Dx - Ex * mx_smSpline) / sqrt(Ex * mx_smSpline)
+```
+
+### Chi-square test
+The following function provides a generic implementation of the chi-square test, where `O` is the observed quantity, `E` is the expected quantity, `npar` is the number of parameters in the model and `alpha` is an optional parameter indicating the confidence level of the test:
+
+```{r}
+chi2Test <- function(O, E, npar, alpha = 0.05){
+  chi2 <- sum((O - E)^2 / E) #Test statistic
+  df <- length(O) - npar
+  chi2_alpha <- qchisq(1 - alpha, df) #Critical value
+  p.value <- 1 - pchisq(chi2, df) #p.value
+  list(statistic = chi2, c.value = chi2_alpha, df = df, p.value = p.value)
+}
+
+```
+To apply the the chi-square test, we need to know the number of parameters that were estimated in each graduation approach. For the Gompertz and Makeham models, this is 2 and 3, respectively. Note that we could get this automatically with the commands `length(coef(gompertz))` and `length(coef(makeham))`, while for the cubic splines we can obtain them with `cubSpline$rank`. Since the smoothing splines are a non-parametric approach, the number of parameters is not naturally defined. However, an estimate of the equivalent number of parameters in the graduation can be obtained from `smSpline$df`. The equivalent number of parameters in this case is `r smSpline$df`. The chi-square test is then applied to the Makeham and Gompertz graudations as follows:
+
+```{r}
+chi2Test(Dx, Ex * mx_gompertz, 2)
+chi2Test(Dx, Ex * mx_makeham, 3)
+```
+
+As expected the p-values for the Gompertz and Makeham graduation are close to zero, indicating the unsatisfactory fit of these two approaches. 
+
+**Exercise**
+
+Apply the chi-square test to the cubic splines and smooth splines.
+
+```{r chi, exercise=TRUE,exercise.lines=6}
+# cubic splines
+
+
+# smoothing splines
+
+```
+
+```{r chi-solution}
+# cubic splines
+chi2Test(Dx, Ex * mx_cubSpline, cubSpline$rank)
+
+# smoothing splines
+chi2Test(Dx, Ex * mx_smSpline, smSpline$df) 
+```
+
+
+```{r chi2, echo=FALSE}
+question("Given a critical value of 0.05, are the graduated rates from the splines statitically different from the raw rates?",
+  answer("There are significant different for both tests",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("There is significant different for the cubic splines but not for the smoothing splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+    answer("There is significant different for the smoothing splines but not for the cubic splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("There is not significant different for either tests",correct = TRUE),
+  allow_retry = TRUE
+)
+```
+
+
+### Standardised deviations test
+
+The following function provides an implementation of the standardised deviation test, where `zx` are the standardised residuals, and `breaks` are the breaks defining the ranges to use in the test( by default $\infty$ to -1, -1 to 0,
+0 to +1, +1 to $+\infty$):
+
+```{r}
+stdTest <- function(zx, breaks = c(-Inf, -1, 0, 1, Inf)){
+  observed <- table(cut(zx, breaks)) #count observation in each interval
+  expected.p <- diff(pnorm(breaks)) #expected probabilities for standard normal
+  chisq.test(observed, p = expected.p) #apply chisquare test
+}
+```
+
+The above function uses the `R` function `chisq.test` which performs a chi-squared goodness-of-fit test.
+
+We can apply this test to the four graduations as follows:
+
+```{r}
+stdTest_gompertz <- stdTest(zx_gompertz)
+stdTest_makeham <- stdTest(zx_makeham)
+stdTest_cubSpline <- stdTest(zx_cubSpline)
+stdTest_smSpline <- stdTest(zx_smSpline)
+```
+
+For instance, the output for the natural cubic spline graduation is:
+
+```{r}
+stdTest_cubSpline
+```
+which indicates that we cannot reject the hypothesis that the standardised residuals follow a standard normal distribution. We can see that the expected and observed values are very close to each other:
+
+```{r}
+stdTest_cubSpline$observed
+stdTest_cubSpline$expected
+```
+
+The Gompertz and Makeham graduations fail the standardised deviations test as their p-value is 0. The smoothing Spline graduation has a p-value of `r round(stdTest_smSpline$p., 2)`, so it also fails the standardised deviations test at the 5% level.
+
+**Exercise** The standardised deviations test is just one of many approaches for testing the normality of the standardised deviations. Alternatively, you could plot a histogram of the residuals and compare it with a standard normal or use a qqplot. Now create the histogram and Q-Q plot for both the standardised deviations from Gompertz and Smoothing splines fitting. Note you can consider using the `hist` and `qqnorm` functions.
+
+```{r stdt, exercise=TRUE,exercise.lines=12}
+# histogram for Gompertz
+
+# Q-Q plot for Gompertz
+
+
+# histogram for Smoothing splines
+
+# Q-Q plot for Smoothing splines
+
+```
+
+```{r stdt-solution}
+# histogram for Gompertz
+hist(zx_gompertz)
+# Q-Q plot for Gompertz
+qqnorm(zx_gompertz);
+
+# histogram for Smoothing splines
+hist(zx_smSpline)
+# Q-Q plot for Smoothing splines
+qqnorm(zx_smSpline);
+```
+
+**Exercise**
+```{r stdt2, echo=FALSE}
+question("Given the above results, which one provides a better fitting?",
+  answer("Gompertz",message = "Incorret. The histogram for the smoothing splines is close to a standard normal density function. And the Q-Q plot for the smoothing splines is much closer to a straight line of 45 degrees."),
+  answer("Smoothing splines.",correct = TRUE),
+  allow_retry = TRUE
+)
+```
+
+### Signs test
+
+The signs test is just a particular case of a test on the probability of success of a Bernoulli experiment (Why?). Hence, we can use the `R` function `binom.test` to implement the signs test:
+
+```{r}
+nages <- length(x)
+signTest_gompertz <- binom.test(sum(zx_gompertz > 0), nages)
+signTest_makeham <- binom.test(sum(zx_makeham > 0), nages)
+```
+In the above code, `sum(zx_gompertz > 0)` is counting the number of positive residuals and `nages` is the number of residuals. For instance, the output of the signs test for Makeham graduation is:
+
+```{r}
+signTest_makeham
+```
+
+This indicates that we can reject the hypothesis for the Makeham graduation (i.e. right balance of positive and negative signs) at the 5%  level of significance but not at the 1% level. However, we know that the Makeham graduation has significant bias at different ages. This highlights one of the weaknesses of this test, namely, that positive signs at some ages can be cancel out by negative signs at other ages.
+
+The Gompertz graduation fails this test (p-value = `r round(signTest_gompertz$p.value, 2)`).
+
+
+**Exercise**
+
+Apply the signs test to the cubic splines and the smoothing splines, and return the p-values of the tests.
+
+```{r signs, exercise=TRUE,exercise.lines=10}
+# cubic splines
+
+
+
+# smoothing splines
+
+
+
+
+```
+
+
+```{r signs-solution}
+# cubic splines
+signTest_cubSpline <- binom.test(sum(zx_cubSpline > 0), nages)
+signTest_cubSpline$p.value
+
+# smoothing splines
+signTest_smSpline <- binom.test(sum(zx_smSpline > 0), nages)
+signTest_smSpline$p.value
+```
+
+
+**Exercise**
+
+
+```{r sign2, echo=FALSE}
+question("Given a critical value of 0.05, are the graduated rates from the splines statitically different from the raw rates?",
+  answer("There are significant different for both tests",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("There is significant different for the cubic splines but not for the smoothing splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+    answer("There is significant different for the smoothing splines but not for the cubic splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("There is not significant different for either tests",correct = TRUE),
+  allow_retry = TRUE
+)
+```
+
+
+### Cumulative deviations test
+
+The following function provides an implementation of the chi-square test, where `A` is the observed number of deaths, `E` is the expected number of deaths and `alpha` is an optional parameter indicating the confidence level of the test:
+```{r}
+cumDevTest <- function(A, E, alpha = 0.05){
+  cumDev <- sum(A - E) / sqrt(sum(E)) #Test statistic
+  z_alpha <- qnorm(1 - alpha/2) #Critical value
+  p.value <- 2 *(1 - pnorm(cumDev)) #p.value (Note it is two-tailed)
+  list(statistic = cumDev, c.value = z_alpha, p.value = p.value)
+}
+```
+
+We can apply this test to the four graduations as follows:
+
+```{r}
+cumDevTest_cubSpline <- cumDevTest(Dx, Ex * mx_cubSpline)
+cumDevTest_smSpline <- cumDevTest(Dx, Ex * mx_smSpline) 
+
+```
+
+For instance, the output for the natural cubic spline graduation is:
+
+```{r}
+cumDevTest_cubSpline
+```
+
+and the high p-value indicates that this graduation passes the test. As expected, the smoothing spline graduation passes the cumulative deviation test with  p-value = `r round(cumDevTest_smSpline$p.value, 2)`.
+
+**Exercise**
+
+Apply the signs test to the Gompertz and Makeham graduation, and return both testing statistics and the p-values of each test.
+
+```{r cdtest, exercise=TRUE,exercise.lines=10}
+# cubic splines
+
+
+
+# smoothing splines
+
+
+
+
+```
+
+
+```{r cdtest-solution}
+# cubic splines
+cumDevTest_gompertz <- cumDevTest(Dx, Ex * mx_gompertz)
+cumDevTest_gompertz$statistic
+cumDevTest_gompertz$p.value
+
+# smoothing splines
+cumDevTest_makeham <- cumDevTest(Dx, Ex * mx_makeham)
+cumDevTest_makeham$statistic
+cumDevTest_makeham$p.value
+```
+
+
+**Exercise**
+
+
+```{r cdtest2, echo=FALSE}
+question("Which one of the following statements is correct?",
+  answer("The testing statistics cannot be negative",message = "Incorret. The cumulative deviation can be negative."),
+  answer("If the p-value is too small, then the graduation passes the test",message = "Incorret. If the p-value is too small, then there is enough evidence to reject the null hypothesis and hence the test fails."),
+  answer("Both the Gompertz and Makeham gradaute fail the test",correct = TRUE),
+  allow_retry = TRUE
+)
+```
+
+### Grouping of signs test
+
+The following function provides an implementation of the grouping of signs test, using the normal approximation used in class, where `zx` are the standardised deviations and `alpha` is an optional parameter indicating the confidence level of the test:
+
+```{r}
+groupSignTest <- function(zx, alpha = 0.05){
+  #Count +'s and -'s
+  signs <- sign(zx)
+  n1 <- sum(signs == 1)
+  n2 <- sum(signs == -1)
+  #Count runs
+  y <- c(-1, sign(zx))
+  G <- sum((y[-1] != y[-(n1 + n2 + 1)]) & y[-1] != -1) # No Runs
+  #Normal approximation
+  mu <- n1 * (n2 + 1) / (n1 + n2)
+  s2 <- (n1 * n2)^2 / (n1 + n2)^3
+  G_alpha <- qnorm(alpha, mean = mu, sd = sqrt(s2)) #Critical value
+  p.value <- (pnorm(G + 0.5, mean = mu, sd = sqrt(s2))) #p.value (one sided) 
+  list(statistic = G, c.value = G_alpha, p.value = p.value)
+}
+```
+
+We can apply this test to the four graduations as follows:
+
+```{r}
+groupSignTest_gompertz <- groupSignTest(zx_gompertz)
+groupSignTest_makeham <- groupSignTest(zx_makeham)
+groupSignTest_cubSpline <- groupSignTest(zx_cubSpline)
+groupSignTest_smSpline <- groupSignTest(zx_smSpline)
+```
+
+For instance, the output for the Makeham graduation is:
+
+```{r}
+groupSignTest_makeham
+```
+which shows that in the Makeham graduation, we have `r groupSignTest_makeham$statistic` runs of positive signs which is less than the critical value `r round(groupSignTest_makeham$c.value, 2)` and hence we can reject the hypothesis of randomness of the the standardised deviations.  
+
+For the other three graduations we see:
+
+- Gompertz: `r groupSignTest_gompertz$statistic` runs and p-value $=$ `r round(groupSignTest_gompertz$p.value, 2)` so we reject the null hypothesis.
+- Cubic spline: `r groupSignTest_cubSpline$statistic` runs and p-value $=$ `r round(groupSignTest_cubSpline$p.value, 2)` so we cannot reject the null hypothesis.
+- Smoothing spline: `r groupSignTest_smSpline$statistic` runs and p-value $=$ `r round(groupSignTest_smSpline$p.value, 2)` so we cannot reject the null hypothesis.
+
+
+
+### Serial correlations test
+
+To implement the serial correlation test we can use standard `R` function `acf` which computes and plots the autocorrelation function of a time series. We can do this with the following
+
+```{r}
+acf(zx_gompertz)
+acf(zx_makeham)
+acf(zx_cubSpline)
+acf(zx_smSpline)
+```
+
+In the above plots, each black vertical line corresponds to the serial correlation at each specific lag, $r_j$. Note that the formula used by function `acf` for computing $r_j$ is slightly different to the one in the lecture notes but the results should be very similar. The dashed blue lines correspond to 95% confidence intervals on the serial correlation values. 
+
+The plots indicate that the Gompertz and Makeham graduation show significant serial correlation in their standardised residuals and hence fail this test. By contrast, for the two spline graduations, the serial correlation values are in general inside the confidence intervals so we cannot reject the hypothesis of independence of their corresponding standardised deviations.  
+
+**Exercise**
+```{r serial, echo=FALSE}
+question("Why one of the following statements regading the autocorrelation function is correct?",
+  answer("The above autocorrelation functions calculate the theoretical autocorrelations if the standard deviations are white noise processes.",message = "Incorret. These are empirical autocorrelation functions of the standard deviations."),
+  answer("If the fitting is good, then most of the values in the autocorrelation plot should be outside the blue dotted lines.",message = "Incorret. If the fitting is good, then the standard deviations should be close to a white noise. Thereofre most of the autocorrelations in this plot should be within the blue lines (which means they are not statistically different from 0)."),
+  answer("The parametric curves provide better fitting than the splines based on the ACF plots.",message = "Incorret. The ACFs of the standard deviations of the splines are close to that of a white noise (i.e. most values are not statistically different from 0), hence the splines provide better fitting."),
+    
+  answer("The autocorrelation function $r_h$ calculats the correlation between $X_{a}$ and $X_{a+h}$. Therefore $r_0$ is the correlation beween $X_{a}$ and $X_a$ itself, which is 1.",correct = TRUE),
+  allow_retry = TRUE
+)
+```
+
+## Unused exercises
+
+
+**Exercise**
+It can be shown that a natural cubic spline with knots at $x^{(1)}, ..., x^{(n)}$ can be written as 
+
+$$\mu_y = a_0 + a_1y  + \sum\limits_{j=1}^{n-2}b_j\Phi_j(y)$$
+
+with 
+
+$$\Phi_j(y) = \phi_j(y) - \frac{x^{(n)} - x^{(j)}}{x^{(n)}-x^{(n-1)}}\phi_{n-1}(y) + \frac{x^{(n-1)} - x^{(j)}}{x^{(n)}-x^{(n-1)}}\phi_{n}(y)$$
+
+and 
+
+$$\phi _{j}\left( y\right) =\begin{cases}0 & y<x^{\left( j\right)}\\
+\left( y-x^{\left( j\right)
+}\right) ^{3}&y\geq x^{\left( j\right) }
+\end{cases}$$
+
+How could you use this result to fit the natural cubic spline in \texttt{R} without using the function \texttt{ns}? Try it and check that your result is the same as the one obtained above with function \texttt{ns}.
+
+**Exercise** How is the number of parameters in a natural cubic spline related to the number of knots?
+
+
+**Exercise** Can you understand why the instruction  `sum((y[-1] != y[-(n1 + n2 + 1)]) & y[-1] != -1)` counts the number of runs? Why is the p-value calculated as `p.value <- (pnorm(G + 0.5, mean = mu, sd = sqrt(s2)))`? 
+
+
+## References
