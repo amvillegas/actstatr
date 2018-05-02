@@ -151,9 +151,9 @@ Although the Makeham law shows a better fit to the data than the Gompertz law, i
 
 ```{r parastate, echo=FALSE}
 question("Which one of the following statements is correct?",
-  answer("One cannot use the standard linear least squares (i.e. function `ls`) for fitting the Gompertz. This is because the Gompertz model is not a linear function of age",message = "Incorret. One can take logarithms at both side of the Gompertz model, which results in a linear representation."),
+  answer("One cannot use the standard linear least squares (i.e. function `ls`) for fitting the Gompertz. This is because the Gompertz model is not a linear function of age",message = "Incorrect. One can take logarithms at both side of the Gompertz model, which results in a linear representation."),
   answer("The  weighted residual sum of squares for the Makeham model is expected to be lower than that of the Gompertz model. This is because the Gompertz model can be viewed as a special case of the Makeham model where A=0",correct = TRUE),
-  answer("In fitting the Makeham model, the initial estimates of beta 0 and beta 1 are chosen as 0.",message = "Incorret. The initial estimates of these two are chosen as the corresponding values from the fittin results of the Gompertz model."),
+  answer("In fitting the Makeham model, the initial estimates of beta 0 and beta 1 are chosen as 0.",message = "Incorrect. The initial estimates of these two are chosen as the corresponding values from the fittin results of the Gompertz model."),
   allow_retry = TRUE
 )
 ```
@@ -163,7 +163,7 @@ question("Which one of the following statements is correct?",
 question("Given the results from the Gompertz law fitting, what are the values of $B$ and $C$?",
   answer("0.00001477166 and 1.10815891153",correct = TRUE),
   answer("-11.1228 and 0.10274", message = "Incorrect. These are the values for the beta's."),
-  answer("67697.1932906 and 1.10815891153", message = "Incorret. Note that the sign for beta 0 is negative."),
+  answer("67697.1932906 and 1.10815891153", message = "Incorrect. Note that the sign for beta 0 is negative."),
   allow_retry = TRUE
 )
 ```
@@ -171,10 +171,10 @@ question("Given the results from the Gompertz law fitting, what are the values o
 
 ```{r residuals, echo=FALSE}
 question("Which one of the following codes can be used to calculate the weighted residual sum of squares for the Makeham model?",
-  answer("`sum((mx_makeham - mx)^2)`",message = "Incorret. This does not include the weights for the residuals."),
+  answer("`sum((mx_makeham - mx)^2)`",message = "Incorrect. This does not include the weights for the residuals."),
   answer("`sum((mx_makeham - mx)^2*Ex/mx)`",correct = TRUE),
-  answer("`sum((mx_makeham - mx)*Ex/mx)`",message = "Incorret. This does not calculate the squared residuals."),
-  answer("`(mx_makeham - mx)^2*Ex/mx`",message = "Incorret. This does not return the sum of the squared residuals."),  
+  answer("`sum((mx_makeham - mx)*Ex/mx)`",message = "Incorrect. This does not calculate the squared residuals."),
+  answer("`(mx_makeham - mx)^2*Ex/mx`",message = "Incorrect. This does not return the sum of the squared residuals."),  
   allow_retry = TRUE
 )
 ```
@@ -190,9 +190,9 @@ We will use the same data set as that of the previous section.
 
 The graduation of the ALT2010-2012 was carried out using natural cubic splines. Here we illustrate how to fit such an approach in `R`.  
 
-The **splines** package provides functions for fitting cubic splines and natural cubic splines. This package uses  [B-Splines](https://en.wikipedia.org/wiki/B-spline), which are a convenient way of representing splines functions.
+The **splines** package provides functions for fitting cubic splines and natural cubic splines. This package uses  [B-Splines](https://en.wikipedia.org/wiki/B-spline), which are a convenient way of representing spline functions.
 
-One of the main issues with spline graduation is selecting the position of the knots. In the ALT2010-2012 graduation for males, the knots were placed at ages 7, 12, 16,	18,	20,	32,	53,	54,	61,	66,	77,	90,	95.  For simplicity, we will use the same knots in this exercise.
+One of the main issues with spline graduation is selecting the position of the knots. In the ALT2010-2012 graduation for males, the knots were placed at ages 7, 12, 16, 18, 20, 32, 53, 54, 61, 66, 77, 90, 95.  For simplicity, we will use the same knots in this exercise.
 
 Using function `ns`, the basis (regressors) for the natural cubic splines can be created and plotted as follows:
 
@@ -204,7 +204,7 @@ matplot(x, cubic_basis, type = "l", xlab = "age (x)", ylab = "phi_i(x)",
         main = "Cubic B-spline basis")
 ```
 
-Fitting a natural cubic spline to the mortality rates reduces then to estimating the  following linear regression model:
+Fitting a natural cubic spline to the mortality rates reduces then to estimating the following linear regression model:
 
 $$\mu_x = \beta_0 + \sum_i \beta_i \phi_i(x) + \epsilon_x$$
 
@@ -322,10 +322,10 @@ lines(x, log(mx_smSpline2), col = 'red')
 
 ```{r smooth2, echo=FALSE}
 question("Which one of the following statements regarding the above results is true?",
-  answer("If the value of lambda is close to 0, then the fitted splines will tend to be very smooth.",message = "Incorret. If lambda is small, then there is less weight on the smoothness of the fitting. Hence the results will be close to the raw mortality rates."),
+  answer("If the value of lambda is close to 0, then the fitted splines will tend to be very smooth.",message = "Incorrect. If lambda is small, then there is less weight on the smoothness of the fitting. Hence the results will be close to the raw mortality rates."),
   answer("The value of lambda determines the balance between smoothness and adherance to the raw rates. The larger lambda is, the more weight is applied to smoothness.",correct = TRUE),
-   answer("Generally speaking, one prefers to choose lambda as small as possible.",message = "Incorret. If lambda is too small, then the fitted splines won't be reasonably smooth."), 
-  answer("If the value of lambda is large, then the fitted splines will tend to be close to the raw mortality rates.",message = "Incorret. If lambda is large, then there is heavy weight on the smoothness of the fitting. Hence the results will be close to smooth."),
+   answer("Generally speaking, one prefers to choose lambda as small as possible.",message = "Incorrect. If lambda is too small, then the fitted splines won't be reasonably smooth."), 
+  answer("If the value of lambda is large, then the fitted splines will tend to be close to the raw mortality rates.",message = "Incorrect. If lambda is large, then there is heavy weight on the smoothness of the fitting. Hence the results will be close to smooth."),
   allow_retry = TRUE
 )
 ```
@@ -459,9 +459,9 @@ chi2Test(Dx, Ex * mx_smSpline, smSpline$df)
 
 ```{r chi2, echo=FALSE}
 question("Given a critical value of 0.05, are the graduated rates from the splines statitically different from the raw rates?",
-  answer("They are significantly different for both splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-  answer("They are significantly different for the cubic splines but not for the smoothing splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-    answer("They are significantly different for the smoothing splines but not for the cubic splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("They are significantly different for both splines",message = "Incorrect. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("They are significantly different for the cubic splines but not for the smoothing splines",message = "Incorrect. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+    answer("They are significantly different for the smoothing splines but not for the cubic splines",message = "Incorrect. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
   answer("There is not significantly different for either tests",correct = TRUE),
   allow_retry = TRUE
 )
@@ -537,7 +537,7 @@ qqnorm(zx_smSpline)
 **Exercise**
 ```{r stdt2, echo=FALSE}
 question("Given the above results, which one provides a better fitting?",
-  answer("Gompertz",message = "Incorret. The histogram for the smoothing splines is close to a standard normal density function. And the Q-Q plot for the smoothing splines is much closer to a straight line of 45 degrees."),
+  answer("Gompertz",message = "Incorrect. The histogram for the smoothing splines is close to a standard normal density function. And the Q-Q plot for the smoothing splines is much closer to a straight line of 45 degrees."),
   answer("Smoothing splines.",correct = TRUE),
   allow_retry = TRUE
 )
@@ -558,7 +558,7 @@ In the above code, `sum(zx_gompertz > 0)` is counting the number of positive res
 signTest_makeham
 ```
 
-This indicates that we can reject the hypothesis for the Makeham graduation (i.e. right balance of positive and negative signs) at the 5%  level of significance but not at the 1% level. However, we know that the Makeham graduation has significant bias at different ages. This highlights one of the weaknesses of this test, namely, that positive signs at some ages can be cancel out by negative signs at other ages.
+This indicates that we can reject the hypothesis for the Makeham graduation (i.e. right balance of positive and negative signs) at the 5% level of significance but not at the 1% level. However, we know that the Makeham graduation has significant bias at different ages. This highlights one of the weaknesses of this test, namely, that positive signs at some ages can be cancelled out by negative signs at other ages.
 
 The Gompertz graduation fails this test (p-value = `r round(signTest_gompertz$p.value, 2)`).
 
@@ -598,9 +598,9 @@ signTest_smSpline$p.value
 
 ```{r sign2, echo=FALSE}
 question("Given a critical value of 0.05, are the graduated rates from the splines statitically different from the raw rates?",
-  answer("They are significantly different for both splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-  answer("They are significantly different for the cubic splines but not for the smoothing splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-    answer("They are significantly different for the smoothing splines but not for the cubic splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("They are significantly different for both splines",message = "Incorrect. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("They are significantly different for the cubic splines but not for the smoothing splines",message = "Incorrect. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+    answer("They are significantly different for the smoothing splines but not for the cubic splines",message = "Incorrect. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
   answer("There is not significantly different for either tests",correct = TRUE),
   allow_retry = TRUE
 )
@@ -670,8 +670,8 @@ cumDevTest_makeham$p.value
 
 ```{r cdtest2, echo=FALSE}
 question("Which one of the following statements is correct?",
-  answer("The testing statistics cannot be negative",message = "Incorret. The cumulative deviation can be negative."),
-  answer("If the p-value is too small, then the graduation passes the test",message = "Incorret. If the p-value is too small, then there is enough evidence to reject the null hypothesis and hence the test fails."),
+  answer("The testing statistics cannot be negative",message = "Incorrect. The cumulative deviation can be negative."),
+  answer("If the p-value is too small, then the graduation passes the test",message = "Incorrect. If the p-value is too small, then there is enough evidence to reject the null hypothesis and hence the test fails."),
   answer("Both the Gompertz and Makeham gradaute fail the test",correct = TRUE),
   allow_retry = TRUE
 )
@@ -679,7 +679,7 @@ question("Which one of the following statements is correct?",
 
 ### Grouping of signs test
 
-The following function provides an implementation of the grouping of signs test, using the normal approximatio, where `zx` are the standardised deviations and `alpha` is an optional parameter indicating the confidence level of the test:
+The following function provides an implementation of the grouping of signs test, using the normal approximation, where `zx` are the standardised deviations and `alpha` is an optional parameter indicating the confidence level of the test:
 
 ```{r}
 groupSignTest <- function(zx, alpha = 0.05){
@@ -740,12 +740,12 @@ The plots indicate that the Gompertz and Makeham graduation show significant ser
 
 **Exercise**
 ```{r serial, echo=FALSE}
-question("Which of the following statements regading the autocorrelation function is correct?",
-  answer("The above autocorrelation functions calculate the theoretical autocorrelations if the standard deviations are white noise processes.",message = "Incorret. These are empirical autocorrelation functions of the standard deviations."),
-  answer("If the fitting is good, then most of the values in the autocorrelation plot should be outside the blue dotted lines.",message = "Incorret. If the fitting is good, then the standard deviations should be close to a white noise. Thereofre most of the autocorrelations in this plot should be within the blue lines (which means they are not statistically different from 0)."),
-  answer("The parametric curves provide better fitting than the splines based on the ACF plots.",message = "Incorret. The ACFs of the standard deviations of the splines are close to that of a white noise (i.e. most values are not statistically different from 0), hence the splines provide better fitting."),
+question("Which of the following statements regarding the autocorrelation function is correct?",
+  answer("The above autocorrelation functions calculate the theoretical autocorrelations if the standard deviations are white noise processes.",message = "Incorrect. These are empirical autocorrelation functions of the standard deviations."),
+  answer("If the fitting is good, then most of the values in the autocorrelation plot should be outside the blue dotted lines.",message = "Incorrect. If the fitting is good, then the standard deviations should be close to a white noise. Therefore most of the autocorrelations in this plot should be within the blue lines (which means they are not statistically different from 0)."),
+  answer("The parametric curves provide better fitting than the splines based on the ACF plots.",message = "Incorrect. The ACFs of the standard deviations of the splines are close to that of a white noise (i.e. most values are not statistically different from 0), hence the splines provide better fitting."),
     
-  answer("The autocorrelation function $r_h$ calculats the correlation between $X_{a}$ and $X_{a+h}$. Therefore $r_0$ is the correlation beween $X_{a}$ and $X_a$ itself, which is 1.",correct = TRUE),
+  answer("The autocorrelation function $r_h$ calculates the correlation between $X_{a}$ and $X_{a+h}$. Therefore $r_0$ is the correlation beween $X_{a}$ and $X_a$ itself, which is 1.",correct = TRUE),
   allow_retry = TRUE
 )
 ```
