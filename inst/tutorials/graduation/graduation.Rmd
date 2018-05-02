@@ -140,9 +140,9 @@ We can obtain and plot the graduated mortality rates as follows:
 
 ```{r}
 mx_makeham <- fitted(makeham)
-plot(x,log(mx),pch=20,xlab="age",ylab="Central mortality rate (log scale)",
-     main="Australian Men: Makeham law",ylim = range(-11,0))
-lines(x,log(mx_makeham),col='blue')
+plot(x, log(mx), pch = 20, xlab = "age", ylab = "Central mortality rate (log scale)",
+          main = "Australian Men: Makeham law", ylim = range(-11, 0))
+lines(x,log(mx_makeham), col = 'blue')
 ```
 
 Although the Makeham law shows a better fit to the data than the Gompertz law, it still doesn't look appropriate as it cannot capture the accident hump, nor child mortality. The Makeham law might be a reasonable model if we were considering ages from 20 onwards.
@@ -248,7 +248,7 @@ We can obtain and plot the graduated mortality rates as follows:
 ```{r}
 mx_smSpline <- fitted(smSpline)
 plot(x, log(mx), pch = 20,  xlab = "age", ylab = "Central mortality rate (log scale)",
-     main = "Australian Men: Smoothing spline", ylim = range(-11,0))
+     main = "Australian Men: Smoothing spline", ylim = range(-11, 0))
 lines(x, log(mx_smSpline), col = 'blue')
 ```
 
@@ -364,9 +364,83 @@ As expected the p-values for the Gompertz and Makeham graduation are close to ze
 
 **Exercise**
 
+
+```{r testSetup, include=FALSE}
+load("AUSdata.RData")
+Ext <- AUSdata$pop$male
+mxt <- AUSdata$rate$male
+Dxt <- round(Ext * mxt)
+Ex <- rowSums(Ext[, c("2010", "2011", "2012")])
+Dx <- rowSums(Dxt[, c("2010", "2011", "2012")])
+mx <- Dx/Ex 
+x <- 2:105
+mx <- mx[as.character(x)]
+Ex <- Ex[as.character(x)]
+Dx <- Dx[as.character(x)]
+
+gompertz <- nls(mx ~ exp(b0 + b1*x), start = list(b0 = 1, b1 = 0), weights = Ex/mx)
+mx_gompertz <- fitted(gompertz)
+
+
+makeham  <- nls(mx ~ A + exp(b0 + b1*x), start = list(A = 0, b0 = coef(gompertz)[1], b1 = coef(gompertz)[2]), weights = Ex/mx)
+mx_makeham <- fitted(makeham)
+
+knots <- c(7, 12, 16, 18, 20, 32, 53, 54, 61, 66, 77, 90, 95)
+cubic_basis <- ns(x, knots = knots)
+cubSpline  <- lm(mx ~ cubic_basis, weights = Ex / mx )
+mx_cubSpline <- fitted(cubSpline)
+
+smSpline <- smooth.spline(x, mx, spar = 0.4)
+mx_smSpline <- fitted(smSpline)
+
+zx_makeham <- (Dx - Ex * mx_makeham) / sqrt(Ex * mx_makeham)
+zx_gompertz <- (Dx - Ex * mx_gompertz) / sqrt(Ex * mx_gompertz)
+zx_cubSpline <- (Dx - Ex * mx_cubSpline) / sqrt(Ex * mx_cubSpline)
+zx_smSpline <- (Dx - Ex * mx_smSpline) / sqrt(Ex * mx_smSpline)
+
+chi2Test <- function(O, E, npar, alpha = 0.05){
+  chi2 <- sum((O - E)^2 / E) #Test statistic
+  df <- length(O) - npar
+  chi2_alpha <- qchisq(1 - alpha, df) #Critical value
+  p.value <- 1 - pchisq(chi2, df) #p.value
+  list(statistic = chi2, c.value = chi2_alpha, df = df, p.value = p.value)
+}
+
+stdTest <- function(zx, breaks = c(-Inf, -1, 0, 1, Inf)){
+  observed <- table(cut(zx, breaks)) #count observation in each interval
+  expected.p <- diff(pnorm(breaks)) #expected probabilities for standard normal
+  chisq.test(observed, p = expected.p) #apply chisquare test
+}
+
+cumDevTest <- function(A, E, alpha = 0.05){
+  cumDev <- sum(A - E) / sqrt(sum(E)) #Test statistic
+  z_alpha <- qnorm(1 - alpha/2) #Critical value
+  p.value <- 2 *(1 - pnorm(cumDev)) #p.value (Note it is two-tailed)
+  list(statistic = cumDev, c.value = z_alpha, p.value = p.value)
+}
+
+
+groupSignTest <- function(zx, alpha = 0.05){
+  #Count +'s and -'s
+  signs <- sign(zx)
+  n1 <- sum(signs == 1)
+  n2 <- sum(signs == -1)
+  #Count runs
+  y <- c(-1, sign(zx))
+  G <- sum((y[-1] != y[-(n1 + n2 + 1)]) & y[-1] != -1) # No Runs
+  #Normal approximation
+  mu <- n1 * (n2 + 1) / (n1 + n2)
+  s2 <- (n1 * n2)^2 / (n1 + n2)^3
+  G_alpha <- qnorm(alpha, mean = mu, sd = sqrt(s2)) #Critical value
+  p.value <- (pnorm(G + 0.5, mean = mu, sd = sqrt(s2))) #p.value (one sided) 
+  list(statistic = G, c.value = G_alpha, p.value = p.value)
+}
+
+```
+
 Apply the chi-square test to the cubic splines and smooth splines.
 
-```{r chi, exercise=TRUE,exercise.lines=6}
+```{r chi, exercise=TRUE,exercise.lines=6, exercise.setup = "testSetup"}
 # cubic splines
 
 
@@ -385,10 +459,10 @@ chi2Test(Dx, Ex * mx_smSpline, smSpline$df)
 
 ```{r chi2, echo=FALSE}
 question("Given a critical value of 0.05, are the graduated rates from the splines statitically different from the raw rates?",
-  answer("There are significant different for both tests",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-  answer("There is significant different for the cubic splines but not for the smoothing splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-    answer("There is significant different for the smoothing splines but not for the cubic splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-  answer("There is not significant different for either tests",correct = TRUE),
+  answer("They are significantly different for both splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("They are significantly different for the cubic splines but not for the smoothing splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+    answer("They are significantly different for the smoothing splines but not for the cubic splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("There is not significantly different for either tests",correct = TRUE),
   allow_retry = TRUE
 )
 ```
@@ -432,9 +506,11 @@ stdTest_cubSpline$expected
 
 The Gompertz and Makeham graduations fail the standardised deviations test as their p-value is 0. The smoothing Spline graduation has a p-value of `r round(stdTest_smSpline$p., 2)`, so it also fails the standardised deviations test at the 5% level.
 
-**Exercise** The standardised deviations test is just one of many approaches for testing the normality of the standardised deviations. Alternatively, you could plot a histogram of the residuals and compare it with a standard normal or use a qqplot. Now create the histogram and Q-Q plot for both the standardised deviations from Gompertz and Smoothing splines fitting. Note you can consider using the `hist` and `qqnorm` functions.
+**Exercise** 
 
-```{r stdt, exercise=TRUE,exercise.lines=12}
+The standardised deviations test is just one of many approaches for testing the normality of the standardised deviations. Alternatively, you could plot a histogram of the residuals and compare it with a standard normal or use a qqplot. Now create the histogram and Q-Q plot for both the standardised deviations from Gompertz and Smoothing splines fitting. Note you can consider using the `hist` and `qqnorm` functions.
+
+```{r stdt, exercise=TRUE,exercise.lines=12, exercise.setup = "testSetup"}
 # histogram for Gompertz
 
 # Q-Q plot for Gompertz
@@ -450,12 +526,12 @@ The Gompertz and Makeham graduations fail the standardised deviations test as th
 # histogram for Gompertz
 hist(zx_gompertz)
 # Q-Q plot for Gompertz
-qqnorm(zx_gompertz);
+qqnorm(zx_gompertz)
 
 # histogram for Smoothing splines
 hist(zx_smSpline)
 # Q-Q plot for Smoothing splines
-qqnorm(zx_smSpline);
+qqnorm(zx_smSpline)
 ```
 
 **Exercise**
@@ -491,7 +567,8 @@ The Gompertz graduation fails this test (p-value = `r round(signTest_gompertz$p.
 
 Apply the signs test to the cubic splines and the smoothing splines, and return the p-values of the tests.
 
-```{r signs, exercise=TRUE,exercise.lines=10}
+```{r signs, exercise=TRUE,exercise.lines=10, exercise.setup = "testSetup"}
+nages <- length(x)
 # cubic splines
 
 
@@ -505,6 +582,7 @@ Apply the signs test to the cubic splines and the smoothing splines, and return 
 
 
 ```{r signs-solution}
+nages <- length(x)
 # cubic splines
 signTest_cubSpline <- binom.test(sum(zx_cubSpline > 0), nages)
 signTest_cubSpline$p.value
@@ -520,10 +598,10 @@ signTest_smSpline$p.value
 
 ```{r sign2, echo=FALSE}
 question("Given a critical value of 0.05, are the graduated rates from the splines statitically different from the raw rates?",
-  answer("There are significant different for both tests",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-  answer("There is significant different for the cubic splines but not for the smoothing splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-    answer("There is significant different for the smoothing splines but not for the cubic splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
-  answer("There is not significant different for either tests",correct = TRUE),
+  answer("They are significantly different for both splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("They are significantly different for the cubic splines but not for the smoothing splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+    answer("They are significantly different for the smoothing splines but not for the cubic splines",message = "Incorret. Both p-values are larger than 0.05, hence there is not statistical evidence for rejection."),
+  answer("There is not significantly different for either tests",correct = TRUE),
   allow_retry = TRUE
 )
 ```
@@ -559,9 +637,9 @@ and the high p-value indicates that this graduation passes the test. As expected
 
 **Exercise**
 
-Apply the signs test to the Gompertz and Makeham graduation, and return both testing statistics and the p-values of each test.
+Apply the cumulative deviations test to the Gompertz and Makeham graduation, and return both testing statistics and the p-values of each test.
 
-```{r cdtest, exercise=TRUE,exercise.lines=10}
+```{r cdtest, exercise=TRUE,exercise.lines=10, exercise.setup = "testSetup"}
 # cubic splines
 
 
@@ -601,7 +679,7 @@ question("Which one of the following statements is correct?",
 
 ### Grouping of signs test
 
-The following function provides an implementation of the grouping of signs test, using the normal approximation used in class, where `zx` are the standardised deviations and `alpha` is an optional parameter indicating the confidence level of the test:
+The following function provides an implementation of the grouping of signs test, using the normal approximatio, where `zx` are the standardised deviations and `alpha` is an optional parameter indicating the confidence level of the test:
 
 ```{r}
 groupSignTest <- function(zx, alpha = 0.05){
@@ -662,7 +740,7 @@ The plots indicate that the Gompertz and Makeham graduation show significant ser
 
 **Exercise**
 ```{r serial, echo=FALSE}
-question("Why one of the following statements regading the autocorrelation function is correct?",
+question("Which of the following statements regading the autocorrelation function is correct?",
   answer("The above autocorrelation functions calculate the theoretical autocorrelations if the standard deviations are white noise processes.",message = "Incorret. These are empirical autocorrelation functions of the standard deviations."),
   answer("If the fitting is good, then most of the values in the autocorrelation plot should be outside the blue dotted lines.",message = "Incorret. If the fitting is good, then the standard deviations should be close to a white noise. Thereofre most of the autocorrelations in this plot should be within the blue lines (which means they are not statistically different from 0)."),
   answer("The parametric curves provide better fitting than the splines based on the ACF plots.",message = "Incorret. The ACFs of the standard deviations of the splines are close to that of a white noise (i.e. most values are not statistically different from 0), hence the splines provide better fitting."),
@@ -671,32 +749,32 @@ question("Why one of the following statements regading the autocorrelation funct
   allow_retry = TRUE
 )
 ```
-
-## Unused exercises
-
-
-**Exercise**
-It can be shown that a natural cubic spline with knots at $x^{(1)}, ..., x^{(n)}$ can be written as 
-
-$$\mu_y = a_0 + a_1y  + \sum\limits_{j=1}^{n-2}b_j\Phi_j(y)$$
-
-with 
-
-$$\Phi_j(y) = \phi_j(y) - \frac{x^{(n)} - x^{(j)}}{x^{(n)}-x^{(n-1)}}\phi_{n-1}(y) + \frac{x^{(n-1)} - x^{(j)}}{x^{(n)}-x^{(n-1)}}\phi_{n}(y)$$
-
-and 
-
-$$\phi _{j}\left( y\right) =\begin{cases}0 & y<x^{\left( j\right)}\\
-\left( y-x^{\left( j\right)
-}\right) ^{3}&y\geq x^{\left( j\right) }
-\end{cases}$$
-
-How could you use this result to fit the natural cubic spline in \texttt{R} without using the function \texttt{ns}? Try it and check that your result is the same as the one obtained above with function \texttt{ns}.
-
-**Exercise** How is the number of parameters in a natural cubic spline related to the number of knots?
-
-
-**Exercise** Can you understand why the instruction  `sum((y[-1] != y[-(n1 + n2 + 1)]) & y[-1] != -1)` counts the number of runs? Why is the p-value calculated as `p.value <- (pnorm(G + 0.5, mean = mu, sd = sqrt(s2)))`? 
-
+  
+  <!-- ## Unused exercises -->
+  
+  
+  <!-- **Exercise** -->
+  <!-- It can be shown that a natural cubic spline with knots at $x^{(1)}, ..., x^{(n)}$ can be written as  -->
+  
+  <!-- $$\mu_y = a_0 + a_1y  + \sum\limits_{j=1}^{n-2}b_j\Phi_j(y)$$ -->
+  
+  <!-- with  -->
+  
+  <!-- $$\Phi_j(y) = \phi_j(y) - \frac{x^{(n)} - x^{(j)}}{x^{(n)}-x^{(n-1)}}\phi_{n-1}(y) + \frac{x^{(n-1)} - x^{(j)}}{x^{(n)}-x^{(n-1)}}\phi_{n}(y)$$ -->
+  
+  <!-- and  -->
+  
+  <!-- $$\phi _{j}\left( y\right) =\begin{cases}0 & y<x^{\left( j\right)}\\ -->
+  <!-- \left( y-x^{\left( j\right) -->
+  <!-- }\right) ^{3}&y\geq x^{\left( j\right) } -->
+  <!-- \end{cases}$$ -->
+  
+  <!-- How could you use this result to fit the natural cubic spline in \texttt{R} without using the function \texttt{ns}? Try it and check that your result is the same as the one obtained above with function \texttt{ns}. -->
+  
+  <!-- **Exercise** How is the number of parameters in a natural cubic spline related to the number of knots? -->
+  
+  
+  <!-- **Exercise** Can you understand why the instruction  `sum((y[-1] != y[-(n1 + n2 + 1)]) & y[-1] != -1)` counts the number of runs? Why is the p-value calculated as `p.value <- (pnorm(G + 0.5, mean = mu, sd = sqrt(s2)))`?  -->
+  
 
 ## References
