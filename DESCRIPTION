@@ -16,5 +16,6 @@ Imports:
     markovchain,
     diagram,
     demography,
-    splines
+    splines,
+    StMoMo
 Suggests: testthat

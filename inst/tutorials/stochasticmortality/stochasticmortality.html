@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+<meta name="progressive" content="false" />
+<meta name="allow-skip" content="false" />
+
+<title>Stochastic Mortality Models in R</title>
+
+
+<!-- highlightjs -->
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+</head>
+
+<body>
+
+
+
+<div class="pageContent band">
+<div class="bandContent page">
+
+<div class="topics">
+
+<div id="section-introduction" class="section level2">
+<h2>Introduction</h2>
+<p>In this tutorial we aim to illustrate the practical implementation of stochastic mortality models in <code>R</code> using the package <strong>StMoMo</strong>. This tutorial will focus on the modelling of mortality rates for males in England and Wales, but the techniques shown can be easily extended to other countries.</p>
+<p><strong>StMoMo</strong> <span class="citation">(Villegas, Kaishev, and Millossovich 2018)</span> is a package implementing stochastic mortality models belonging to the class of Generalised Age-Period-Cohort model and provides tools for fitting stochastic mortality models, assessing their goodness of fit and performing mortality projections. Note that this package has been loaded in the current <code>R</code> workspace. Therefore you can utilise the capacities of the package without explicitly loading it.</p>
+<p>However, if you are using this package outside this tutorial remember to first install the package with the code:</p>
+<pre class="r"><code>install.packages(&quot;StMoMo&quot;, dependencies = TRUE)</code></pre>
+<p>And then load it with the instruction</p>
+<pre class="r"><code>library(&quot;StMoMo&quot;)</code></pre>
+<!-- An overview of the structure of **StMoMo** and of the  functions it has available is provided by the diagram below -->
+<!-- ![StMoMo](StMoMoDiagram.png) -->
+</div>
+<div id="section-data-for-england-and-wales" class="section level2">
+<h2>Data for England and Wales</h2>
+<p>The object <code>EWMaleData</code> included in the package <strong>StMoMo</strong> contains data on deaths and central exposures for England and Wales males for the period 1961-2011 and for ages 0-100 obtained from the Human Mortality Database (<a href="http://www.mortality.org/" class="uri">http://www.mortality.org/</a>):</p>
+<pre class="r"><code>EWMaleData</code></pre>
+<pre><code>## Mortality data for England and Wales
+##     Series:  male
+##     Years: 1961 - 2011
+##     Ages:  0 - 100
+##     Exposure:  central</code></pre>
+<p>We can do a plot of the evolution mortality at some sample ages with the following code:</p>
+<pre class="r"><code>mxt &lt;- EWMaleData$Dxt /EWMaleData$ Ext
+xplot &lt;- c(&quot;30&quot;, &quot;40&quot;, &quot;50&quot;, &quot;60&quot;, &quot;70&quot;, &quot;80&quot;)
+matplot(EWMaleData$years, t(mxt[xplot,]),  type = &quot;l&quot;, log = &quot;y&quot;, lty = 1, ylab = &quot;mxt&quot;) 
+text(1963, mxt[xplot, &quot;1985&quot;], labels = xplot)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-3-1.png" width="624" /></p>
+<p>From this graph we see that mortality in England and Wales has improved considerably over the past 50 years. We can get a quick quantification of this mortality improvement as follows:</p>
+<pre class="r"><code>#Reduction factors
+rx &lt;- (mxt[, &quot;2011&quot;]/mxt[, &quot;1961&quot;])^(1/(2011-1961))
+#Compute Improvement rates and smooth
+ix &lt;- 1 - rx
+ix_smooth &lt;- fitted(smooth.spline(EWMaleData$ages, ix))
+#Plot results
+plot(EWMaleData$ages, ix, type = &quot;l&quot;, main = &quot;Improvement rates in EW 1961-2011&quot;)
+lines(EWMaleData$ages, ix_smooth, col = &quot;blue&quot;, lwd = 2)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-4-1.png" width="624" /></p>
+<div id="section-exercise" class="section level3">
+<h3>Exercise</h3>
+<p>Calculate and present the mortality improvement rates in EW from 1990 to 2011 for the ages 20, 40, 60, 80, and 100.</p>
+<div class="tutorial-exercise" data-label="improv" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="12">
+<pre class="text"><code># import the data 
+mxt &lt;- EWMaleData$Dxt /EWMaleData$ Ext
+xplot &lt;- c(&quot;20&quot;, &quot;40&quot;, &quot;60&quot;, &quot;80&quot;, &quot;100&quot;)
+
+# reduction factors
+rx &lt;- (mxt[, &quot;2011&quot;]/mxt[, &quot;1990&quot;])^(1/(2011-1990))
+
+# compute Improvement rates
+ix &lt;- 1 - rx
+
+# plot results
+plot(EWMaleData$ages, ix, type = &quot;l&quot;, main = &quot;Improvement rates in EW 1990-2011&quot;)</code></pre>
+<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.timelimit":60,"exercise.checker":"NULL"}</script>
+</div>
+<div class="tutorial-exercise-support" data-label="improv-solution" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code># import the data 
+mxt &lt;- EWMaleData$Dxt /EWMaleData$ Ext
+xplot &lt;- c(&quot;20&quot;, &quot;40&quot;, &quot;60&quot;, &quot;80&quot;, &quot;100&quot;)
+
+# reduction factors
+rx &lt;- (mxt[, &quot;2011&quot;]/mxt[, &quot;1990&quot;])^(1/(2011-1990))
+
+# compute Improvement rates
+ix &lt;- 1 - rx
+
+# plot results
+plot(EWMaleData$ages, ix, type = &quot;l&quot;, main = &quot;Improvement rates in EW 1990-2010&quot;)</code></pre>
+</div>
+<pre><code>## PhantomJS not found. You can install it with webshot::install_phantomjs(). If it is installed, please make sure the phantomjs executable can be found via the PATH variable.</code></pre>
+
+<div id="htmlwidget-cf557af021549d77354b" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-cf557af021549d77354b">{"x":{"question":"Based on the results, which one of the following statements is correct?","answers":[{"option":"The mortality improvement is the highest around age 40.","correct":false,"message":"Incorret. The improvement rate is the lowest around age 40."},{"option":"The mortatlity improvement rate is constant across all ages.","correct":false,"message":"Incorret. There is more improvement at around age 20 and ages 60-80."},{"option":"The highest improvement appears for ages before 20.","correct":true,"message":null}],"label":"improv2","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Based on the results, which one of the following statements is correct?","a":[{"option":"The mortality improvement is the highest around age 40.","correct":false,"message":"Incorret. The improvement rate is the lowest around age 40."},{"option":"The mortatlity improvement rate is constant across all ages.","correct":false,"message":"Incorret. There is more improvement at around age 20 and ages 60-80."},{"option":"The highest improvement appears for ages before 20.","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<div id="section-models" class="section level2">
+<h2>Models</h2>
+<p>In order to illustrate the creation of stochastic mortality mortality models and other capabilities of <strong>StMoMo</strong>, we will consider the models summarised in the table below</p>
+<table style="width:89%;">
+<colgroup>
+<col width="19%" />
+<col width="69%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Predictor (<span class="math inline">\(\eta_{xt}\)</span>)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>LC</td>
+<td><span class="math inline">\(\alpha_x + \beta^{(1)}_x \kappa^{(1)}_t\)</span></td>
+</tr>
+<tr class="even">
+<td>CBD</td>
+<td><span class="math inline">\(\kappa_t^{(1)} + (x-\bar{x})\kappa_t^{(2)}\)</span></td>
+</tr>
+<tr class="odd">
+<td>APC</td>
+<td><span class="math inline">\(\alpha_x + \kappa^{(1)}_t+ \gamma_{t-x}\)</span></td>
+</tr>
+<tr class="even">
+<td>M7</td>
+<td><span class="math inline">\(\kappa_t^{(1)} + (x-\bar{x})\kappa_t^{(2)} + \left((x-\bar{x})^2-\hat{\sigma}_x^2\right)\kappa_t^{(3)} + \gamma_{t-x}\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>In this table, LC stands for the Lee-Carter model; CBD for the Cairns-Blake-Dowd model; APC for the classical Age-Period-Cohort model; and M7 for the quadratic CBD with cohort effects.</p>
+<p>For consistency, we will consider all the models under a log-Poisson setting (however, in <strong>StMoMo</strong> we could easily use a logit-binomial setting focusing on one-year death probabilities).</p>
+<p><span class="math display">\[D_{xt}\sim \mathrm{Poisson}(E^c_{xt}\mu_{xt})\]</span> <span class="math display">\[\log \mu_{xt}=\eta_{xt}\]</span></p>
+<p><strong>StMoMo</strong> has predefined functions for defining these four stochastic mortality. We can thus create these models with the following commands:</p>
+<pre class="r"><code>LC &lt;- lc()
+CBD &lt;- cbd(link = &quot;log&quot;)
+APC &lt;- apc()
+M7 &lt;- m7(link = &quot;log&quot;)</code></pre>
+<p>Each of the objects will have an abstract representation of the corresponding stochastic mortality model:</p>
+<pre class="r"><code>LC </code></pre>
+<pre><code>## Poisson model with predictor: log m[x,t] = a[x] + b1[x] k1[t]</code></pre>
+<pre class="r"><code>CBD</code></pre>
+<pre><code>## Poisson model with predictor: log m[x,t] = k1[t] + f2[x] k2[t]</code></pre>
+<pre class="r"><code>APC</code></pre>
+<pre><code>## Poisson model with predictor: log m[x,t] = a[x] + k1[t] + g[t-x]</code></pre>
+<pre class="r"><code>M7 </code></pre>
+<pre><code>## Poisson model with predictor: log m[x,t] = k1[t] + f2[x] k2[t] + f3[x] k3[t] + g[t-x]</code></pre>
+<p><strong>Exercise</strong></p>
+
+<div id="htmlwidget-4c59d0fa3accc0244c16" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-4c59d0fa3accc0244c16">{"x":{"question":"Among the four models, which ones incorporate a cohort effect?","answers":[{"option":"LC and APC","correct":false,"message":"Cohort effects apply to people with the same birth age, hence should be reflected with a subscript (t-x) in the model specification. APC has a cohort effect but LC doesn&#39;t"},{"option":"CBD and M7","correct":false,"message":"Cohort effects apply to people with the same birth age, hence should be reflected with a subscript (t-x) in the model specification. M7 has a cohort effect but CBD doesn&#39;t"},{"option":"LC and CBD","correct":false,"message":"Cohort effects apply to people with the same birth age, hence should be reflected with a subscript (t-x) in the model specification. LC nor CBD have a cohort effect"},{"option":"APC and M7","correct":true,"message":null}],"label":"parastate","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Among the four models, which ones incorporate a cohort effect?","a":[{"option":"LC and APC","correct":false,"message":"Cohort effects apply to people with the same birth age, hence should be reflected with a subscript (t-x) in the model specification. APC has a cohort effect but LC doesn&#39;t"},{"option":"CBD and M7","correct":false,"message":"Cohort effects apply to people with the same birth age, hence should be reflected with a subscript (t-x) in the model specification. M7 has a cohort effect but CBD doesn&#39;t"},{"option":"LC and CBD","correct":false,"message":"Cohort effects apply to people with the same birth age, hence should be reflected with a subscript (t-x) in the model specification. LC nor CBD have a cohort effect"},{"option":"APC and M7","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="section-model-fitting" class="section level2">
+<h2>Model fitting</h2>
+<p>In <strong>StMoMo</strong> the fitting of stochastic mortality models to data is carried out with the function <code>fit</code>.</p>
+<p>In our examples, we will concentrate on ages 55 to 89 as the CBD model and the M7 model have been particularly designed to fit higher ages. Models LC, APC, CBD and M7 can be fitted to England and Wales male mortality data for ages 55 to 89 using the code:</p>
+<pre class="r"><code>#Ages for fitting
+ages.fit &lt;- 55:89
+#Fit models         
+LCfit &lt;- fit(LC, data = EWMaleData, ages.fit = ages.fit)
+APCfit &lt;- fit(APC, data = EWMaleData, ages.fit = ages.fit)
+CBDfit &lt;- fit(CBD, data = EWMaleData, ages.fit = ages.fit)
+M7fit &lt;- fit(M7, data = EWMaleData, ages.fit = ages.fit)</code></pre>
+<p>We can then plot the parameter estimates as follows:</p>
+<pre class="r"><code> plot(LCfit)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-8-1.png" width="624" /></p>
+<pre class="r"><code> plot(CBDfit, parametricbx = FALSE)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-9-1.png" width="624" /></p>
+<pre class="r"><code> plot(M7fit, parametricbx = FALSE)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-10-1.png" width="624" /></p>
+<div id="section-exercise-1" class="section level3">
+<h3>Exercise</h3>
+<p>Present the parameter estimates of the APC model.</p>
+<div class="tutorial-exercise-support" data-label="estmSetup" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>APC &lt;- apc()
+ages.fit &lt;- 55:89
+APCfit &lt;- fit(APC, data = EWMaleData, ages.fit = ages.fit)</code></pre>
+</div>
+<div class="tutorial-exercise" data-label="estm" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="2">
+<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.timelimit":60,"exercise.setup":"estmSetup","exercise.checker":"NULL"}</script>
+</div>
+<div class="tutorial-exercise-support" data-label="estm-solution" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>plot(APCfit, parametricbx = FALSE)</code></pre>
+</div>
+<p><strong>Exercise</strong></p>
+
+<div id="htmlwidget-27a34fa1c6d5bc65ba3e" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-27a34fa1c6d5bc65ba3e">{"x":{"question":"Based on the results of the APC fitting, which one of the following statements is correct?","answers":[{"option":"An increasing level of \\(\\alpha_x\\) implies mortality improvement over time.","correct":false,"message":"\\(\\alpha_x\\) refers to age specific mortality rate, hence is not related to mortality improvement over time."},{"option":"A decreasing level of \\(\\kappa_t\\) means the mortality rate increases over time.","correct":false,"message":"A lower level of \\[\\kappa_t\\] means a lower level of mortality rate"},{"option":"A decreasing level of \\(\\kappa_t\\) means older people have higher mortality rates.","correct":false,"message":"\\(\\kappa_t\\) describes the overall mortality improvement over time, and is independent of age."},{"option":"People who were born between 1920-1940 experienced higher mortality improvement compared to those born between 1900-1920.","correct":true,"message":null}],"label":"estm2","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Based on the results of the APC fitting, which one of the following statements is correct?","a":[{"option":"An increasing level of \\(\\alpha_x\\) implies mortality improvement over time.","correct":false,"message":"\\(\\alpha_x\\) refers to age specific mortality rate, hence is not related to mortality improvement over time."},{"option":"A decreasing level of \\(\\kappa_t\\) means the mortality rate increases over time.","correct":false,"message":"A lower level of \\[\\kappa_t\\] means a lower level of mortality rate"},{"option":"A decreasing level of \\(\\kappa_t\\) means older people have higher mortality rates.","correct":false,"message":"\\(\\kappa_t\\) describes the overall mortality improvement over time, and is independent of age."},{"option":"People who were born between 1920-1940 experienced higher mortality improvement compared to those born between 1900-1920.","correct":true,"message":null}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<div id="section-goodness-of-fit---residuals-analysis" class="section level2">
+<h2>Goodness-of-fit - residuals analysis</h2>
+<p>The goodness-of-fit of the mortality models can be analysed by inspecting the residuals of the fitted models. In <strong>StMoMo</strong>, these residuals can be computed with the function <code>residuals</code>:</p>
+<pre class="r"><code>LCres &lt;- residuals(LCfit)
+CBDres &lt;- residuals(CBDfit)
+APCres &lt;- residuals(APCfit)
+M7res &lt;- residuals(M7fit)</code></pre>
+<p>Graphs of these residuals can be produced using the generic function <code>plot</code>. For instance, heat maps of the residuals can be produced with the commands (Sign plots can also be produce if we set <code>type = &quot;signplot&quot;</code>):</p>
+<pre class="r"><code>plot(LCres, type = &quot;colourmap&quot;, reslim = c(-3.5, 3.5))</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-12-1.png" width="624" /></p>
+<pre class="r"><code>plot(CBDres, type = &quot;colourmap&quot;, reslim = c(-3.5, 3.5))</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-12-2.png" width="624" /></p>
+<pre class="r"><code>plot(APCres, type = &quot;colourmap&quot;, reslim = c(-3.5, 3.5))</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-12-3.png" width="624" /></p>
+<p>Similarly, scatter plots of the residuals can be produced with the commands:</p>
+<pre class="r"><code>plot(CBDres, type = &quot;scatter&quot;, reslim = c(-3.5,3.5))</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-13-1.png" width="624" /></p>
+<p><strong>Exercise</strong> Present the heat map and scatter plots of residuals for the M7 model.</p>
+<div class="tutorial-exercise-support" data-label="gofSetup" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>M7 &lt;- m7(link = &quot;log&quot;)
+ages.fit &lt;- 55:89
+M7fit &lt;- fit(M7, data = EWMaleData, ages.fit = ages.fit)
+M7res &lt;- residuals(M7fit)</code></pre>
+</div>
+<div class="tutorial-exercise" data-label="gof" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="6">
+<pre class="text"><code># heat map
+
+
+# scatter plot</code></pre>
+<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.timelimit":60,"exercise.setup":"gofSetup","exercise.checker":"NULL"}</script>
+</div>
+<div class="tutorial-exercise-support" data-label="gof-solution" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code># heat map
+plot(M7res, type = &quot;colourmap&quot;, reslim = c(-3.5, 3.5))
+
+# scatter plot
+plot(M7res, type = &quot;scatter&quot;, reslim = c(-3.5,3.5))</code></pre>
+</div>
+<p><strong>Exercise</strong></p>
+
+<div id="htmlwidget-0a39be51262cdcb412d0" style="width:100%;height:auto;", class = "quiz html-widget">
+<div class="panel panel-default">
+<div class="panel-body quizArea">
+</div>
+</div>
+</div>
+
+<script type="application/json" data-for="htmlwidget-0a39be51262cdcb412d0">{"x":{"question":"Based on the results of this section, which one of the following statements is correct?","answers":[{"option":"The heat map of the LC model does not show any cohort effect.","correct":false,"message":"There are clear diagonal patterns in  the heat map. This is expected since the LC model does not incorporate cohort effects."},{"option":"The heat map of the M7 model shows better fitting than that of the APC model.","correct":true,"message":null},{"option":"The scatter plots of the CBD model imply that the fitting is ideal for all ages.","correct":false,"message":"The residuals of the middle ages are much higher than those of younger and elder ages. Hence the fitting is not good enough across different ages."}],"label":"gof2","skipStartButton":true,"perQuestionResponseAnswers":true,"perQuestionResponseMessaging":true,"preventUnanswered":true,"displayQuestionCount":false,"displayQuestionNumber":false,"disableRanking":true,"nextQuestionText":"","checkAnswerText":"Submit Answer","allowRetry":true,"randomSortAnswers":false,"json":{"info":{"name":"","main":""},"questions":[{"q":"Based on the results of this section, which one of the following statements is correct?","a":[{"option":"The heat map of the LC model does not show any cohort effect.","correct":false,"message":"There are clear diagonal patterns in  the heat map. This is expected since the LC model does not incorporate cohort effects."},{"option":"The heat map of the M7 model shows better fitting than that of the APC model.","correct":true,"message":null},{"option":"The scatter plots of the CBD model imply that the fitting is ideal for all ages.","correct":false,"message":"The residuals of the middle ages are much higher than those of younger and elder ages. Hence the fitting is not good enough across different ages."}],"correct":"Correct!","incorrect":"Incorrect."}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="section-forecasting-and-simulation" class="section level2">
+<h2>Forecasting and simulation</h2>
+<div id="section-forecasting" class="section level3">
+<h3>Forecasting</h3>
+<p>Once we have fitted the stochastic mortality model, we can project it forward to obtain forecast of mortality rates. In <strong>StMoMo</strong> this is accomplished with the function <code>forecast</code>. This function assumes that the period indexes follow a multivariate random walk with drift:</p>
+<p><span class="math display">\[\boldsymbol{\kappa}_t = \boldsymbol{\delta} + \boldsymbol{\kappa}_{t-1} + \boldsymbol{\xi}_t^\kappa, \qquad \boldsymbol{\kappa}_t = 
+\left(\!
+    \begin{array}{c}
+      \kappa_t^{(1)} \\
+      \vdots\\
+        \kappa_t^{(N)}
+    \end{array}
+  \!\right), \qquad \boldsymbol{\xi}_t^\kappa\sim N(\mathbf{0},\Sigma),\]</span></p>
+<p>and that the cohort effects can be modelled with an ARIMA<span class="math inline">\((p,q,d)\)</span> with drift:</p>
+<p><span class="math display">\[\Delta^d\gamma_c =  \delta_0 + \phi_1\Delta^d\gamma_{c-1} +\cdots+ \phi_p\Delta^d\gamma_{c-p}+\epsilon_{c}+\delta_1\epsilon_{c-1}+\cdots+\delta_q\epsilon_{c-q}\]</span></p>
+<p>50-year ahead (<span class="math inline">\(h = 50\)</span>) central projections of the period indexes, cohort index, and mortality rates for the England and Wales mortality experience using the LC, CBD and APC model can be obtained with the code:</p>
+<pre class="r"><code>LCfor &lt;- forecast(LCfit, h=50)
+CBDfor &lt;- forecast(CBDfit, h=50)
+APCfor &lt;- forecast(APCfit, h=50, gc.order = c(1,1,0))</code></pre>
+<p>Note that here we have a assumed for the APC model that the cohort effect,<span class="math inline">\(\gamma_{t-x}\)</span>, follows ARIMA<span class="math inline">\((1,1,0)\)</span> with drift</p>
+<p>We can then produce plots of the forecast of the period and cohort indexes with function <code>plot</code>:</p>
+<pre class="r"><code>plot(LCfor, only.kt = TRUE)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-15-1.png" width="624" /></p>
+<pre class="r"><code>plot(CBDfor, parametricbx = FALSE)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-16-1.png" width="624" /></p>
+<pre class="r"><code>plot(APCfor, parametricbx = FALSE)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-17-1.png" width="624" /></p>
+<p>The projected values of the mortality rates will be in the attribute <code>$rates</code> of each of the forecasted models. Then, for instance, the mortality rate at age 65 in year 2030 produced by each of the models can be accessed as follows:</p>
+<pre class="r"><code>LCfor$rates[&quot;65&quot;, &quot;2030&quot;]</code></pre>
+<pre><code>## [1] 0.007538405</code></pre>
+<pre class="r"><code>CBDfor$rates[&quot;65&quot;, &quot;2030&quot;]</code></pre>
+<pre><code>## [1] 0.008371284</code></pre>
+<pre class="r"><code>APCfor$rates[&quot;65&quot;, &quot;2030&quot;]</code></pre>
+<pre><code>## [1] 0.01008552</code></pre>
+<p>We can use these to produce a graph of the projected mortality rates. For example, projected rates from the APC model at sample ages can be produced as follows:</p>
+<pre class="r"><code>xplot &lt;- c(&quot;60&quot;, &quot;70&quot;, &quot;80&quot;)
+matplot(EWMaleData$years, t(mxt[xplot,]), type = &quot;l&quot;, log = &quot;y&quot;, lty = 1, 
+         main = &quot;EW Projected rates from APC&quot;, ylab = &quot;mxt&quot;,
+        xlim = c(1960, 2060), ylim = c(0.001, 0.2)) 
+matlines(APCfor$years, t(APCfor$rates[xplot,] ), lty = 2)
+text(1963, mxt[xplot, &quot;1985&quot;], labels = xplot)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-19-1.png" width="624" /></p>
+</div>
+<div id="section-simulation" class="section level3">
+<h3>Simulation</h3>
+<p>Package <strong>StMoMo</strong> also provides the function <code>simulate</code> for simulating trajectories from stochastic mortality models. For example, the code below produces 500 simulated trajectories for the next 50 years of the four stochastic mortality models fitted previously to the England and Wales male mortality experience:</p>
+<pre class="r"><code>LCsim &lt;- simulate(LCfit, nsim = 500, h = 50)
+CBDsim &lt;- simulate(CBDfit, nsim = 500, h = 50)
+APCsim &lt;- simulate(APCfit, nsim = 500, h = 50, gc.order=c(1, 1, 0))
+M7sim &lt;- simulate(M7fit, nsim = 500, h = 50, gc.order=c(2, 0, 0))</code></pre>
+<p>The output from this simulation can be used to extract sample trajectories from a model. For instance, 20 trajectories of the period index of of the LC can be plotted as follows:</p>
+<pre class="r"><code>#Plot period index trajectories for the LC model
+plot(LCfit$years, LCfit$kt[1, ], 
+     xlim = c(1960, 2061), ylim = c(-65, 15),
+     type = &quot;l&quot;, xlab = &quot;year&quot;, ylab = &quot;kt&quot;,
+     main = &quot;Period index (LC)&quot;)
+matlines(LCsim$kt.s$years, LCsim$kt.s$sim[1,,1:20], 
+         type = &quot;l&quot;, lty = 1)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-21-1.png" width="624" /></p>
+<p>We can also obtain sample trajectories of the force of mortality at age 65 produced by the LC model as follows:</p>
+<pre class="r"><code>plot(LCfit$years, mxt[&quot;65&quot;, ], xlim = range(LCfit$years, LCsim$years),
+ylim = range(mxt[&quot;65&quot;, ], LCsim$rates[&quot;65&quot;, , 1:20]), type = &quot;l&quot;,
+xlab = &quot;year&quot;, ylab = &quot;rate&quot;, main = &quot;Mortality rates at age 65&quot;)
+matlines(LCsim$years, LCsim$rates[&quot;65&quot;, , 1:20], type = &quot;l&quot;, lty = 1)</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-22-1.png" width="624" /></p>
+<p>Finally, we can use the output to produce a fanchart depicting the uncertainty in the projection of the mortality at age 65 produced by the LC model:</p>
+<pre class="r"><code>library(fanplot)
+plot(LCfit$years, mxt[&quot;65&quot;,], xlim = c(1960, 2061), 
+     ylim = c(0.0025, 0.05),  pch = 20, log = &quot;y&quot;,
+     xlab = &quot;year&quot;, ylab = &quot;m(65,t) (log scale)&quot;)
+fan(t(LCsim$rates[&quot;65&quot;,,]), start = 2012, 
+    probs = c(2.5, 10, 25, 50, 75, 90, 97.5), n.fan=4, ln=NULL,
+    fan.col = colorRampPalette(c(&quot;black&quot;, &quot;white&quot;)))</code></pre>
+<p><img src="stochasticmortality_files/figure-html4/unnamed-chunk-23-1.png" width="624" /></p>
+<p>Note that in the above graph the mortality rates are shown in a log-scale and that the different shades in the projection represent 95%, 80% and 50% prediction intervals.</p>
+</div>
+<div id="section-exercise-2" class="section level3">
+<h3>Exercise</h3>
+<p>Forecast the mortality rate of the M7 model over 50 years and print the forecasted mortality rate at age 60 in year 2020. Assume that the cohort indexes of the M7 follow an ARIMA<span class="math inline">\((2,0,0)\)</span> with non-zero intercept</p>
+<div class="tutorial-exercise-support" data-label="foreSetup" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>M7 &lt;- m7(link = &quot;log&quot;)
+ages.fit &lt;- 55:89
+M7fit &lt;- fit(M7, data = EWMaleData, ages.fit = ages.fit)
+M7res &lt;- residuals(M7fit)</code></pre>
+</div>
+<div class="tutorial-exercise" data-label="fore" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="9">
+<pre class="text"><code># forecast
+
+
+# plot the forecast
+
+
+# print the required rate</code></pre>
+<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.timelimit":60,"exercise.setup":"foreSetup","exercise.checker":"NULL"}</script>
+</div>
+<div class="tutorial-exercise-support" data-label="fore-solution" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code># forecast
+M7for &lt;- forecast(M7fit, h=50, gc.order = c(2,0,0))
+
+# plot the forecast
+plot(M7for, parametricbx = FALSE)
+
+# print the required rate
+M7for$rates[&quot;60&quot;, &quot;2020&quot;]</code></pre>
+</div>
+</div>
+</div>
+<div id="section-reference" class="section level2">
+<h2>Reference</h2>
+
+<script type="application/shiny-prerendered" data-context="server-start">
+library("learnr")
+library("StMoMo")
+tutorial_options(exercise.timelimit = 60)
+knitr::opts_knit$set(root.dir = getwd()) 
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+learnr:::register_http_handlers(session, metadata = NULL)
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+`tutorial-exercise-improv-result` <- learnr:::setup_exercise_handler(reactive(req(input$`tutorial-exercise-improv-code-editor`)), session)
+output$`tutorial-exercise-improv-output` <- renderUI({
+  `tutorial-exercise-improv-result`()
+})
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+`tutorial-exercise-estm-result` <- learnr:::setup_exercise_handler(reactive(req(input$`tutorial-exercise-estm-code-editor`)), session)
+output$`tutorial-exercise-estm-output` <- renderUI({
+  `tutorial-exercise-estm-result`()
+})
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+`tutorial-exercise-gof-result` <- learnr:::setup_exercise_handler(reactive(req(input$`tutorial-exercise-gof-code-editor`)), session)
+output$`tutorial-exercise-gof-output` <- renderUI({
+  `tutorial-exercise-gof-result`()
+})
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+`tutorial-exercise-fore-result` <- learnr:::setup_exercise_handler(reactive(req(input$`tutorial-exercise-fore-code-editor`)), session)
+output$`tutorial-exercise-fore-output` <- renderUI({
+  `tutorial-exercise-fore-result`()
+})
+</script>
+ <!--html_preserve-->
+<script type="application/shiny-prerendered" data-context="dependencies">
+{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/cerulean.min.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["pagedtable"]},{"type":"character","attributes":{},"value":["1.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/pagedtable-1.1"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["js/pagedtable.js"]},{"type":"character","attributes":{},"value":["css/pagedtable.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["highlightjs"]},{"type":"character","attributes":{},"value":["1.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["href"]}},"value":[{"type":"character","attributes":{},"value":["stochasticmortality_files/highlightjs-1.1"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["highlight.js"]},{"type":"character","attributes":{},"value":["textmate.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-format"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmarkdown/templates/tutorial/resources"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-format.js"]},{"type":"character","attributes":{},"value":["tutorial-format.css","rstudio-theme.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["font-awesome"]},{"type":"character","attributes":{},"value":["4.5.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/font-awesome-4.5.0"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["css/font-awesome.min.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["ace"]},{"type":"character","attributes":{},"value":["1.2.6"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/ace"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["ace.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["clipboardjs"]},{"type":"character","attributes":{},"value":["1.5.15"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/clipboardjs"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["clipboard.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]},{"type":"character","attributes":{},"value":["0.8"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["www"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["htmlwidgets.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["quiz-binding"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["quiz.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/bootstrap.min.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["slickquiz"]},{"type":"character","attributes":{},"value":["1.5.20"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets/lib/slickquiz"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["js/slickQuiz.js"]},{"type":"character","attributes":{},"value":["css/slickQuiz.css","css/slickQuizTutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]},{"type":"character","attributes":{},"value":["0.8"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["www"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["htmlwidgets.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["quiz-binding"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["quiz.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/bootstrap.min.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["slickquiz"]},{"type":"character","attributes":{},"value":["1.5.20"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets/lib/slickquiz"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["js/slickQuiz.js"]},{"type":"character","attributes":{},"value":["css/slickQuiz.css","css/slickQuizTutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["ace"]},{"type":"character","attributes":{},"value":["1.2.6"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/ace"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["ace.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["clipboardjs"]},{"type":"character","attributes":{},"value":["1.5.15"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/clipboardjs"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["clipboard.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]},{"type":"character","attributes":{},"value":["0.8"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["www"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["htmlwidgets.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["quiz-binding"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["quiz.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/bootstrap.min.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["slickquiz"]},{"type":"character","attributes":{},"value":["1.5.20"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets/lib/slickquiz"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["js/slickQuiz.js"]},{"type":"character","attributes":{},"value":["css/slickQuiz.css","css/slickQuizTutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["ace"]},{"type":"character","attributes":{},"value":["1.2.6"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/ace"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["ace.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["clipboardjs"]},{"type":"character","attributes":{},"value":["1.5.15"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/clipboardjs"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["clipboard.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]},{"type":"character","attributes":{},"value":["0.8"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["www"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["htmlwidgets.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["quiz-binding"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["quiz.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["jquery"]},{"type":"character","attributes":{},"value":["1.11.3"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/jquery-1.11.3"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["jquery.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootstrap"]},{"type":"character","attributes":{},"value":["3.3.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["rmd/h/bootstrap-3.3.5"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["viewport"]}},"value":[{"type":"character","attributes":{},"value":["width=device-width, initial-scale=1"]}]},{"type":"character","attributes":{},"value":["js/bootstrap.min.js","shim/html5shiv.min.js","shim/respond.min.js"]},{"type":"character","attributes":{},"value":["css/bootstrap.min.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["rmarkdown"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["bootbox"]},{"type":"character","attributes":{},"value":["4.4.0"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/bootbox"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["bootbox.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["localforage"]},{"type":"character","attributes":{},"value":["1.5"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/localforage"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["localforage.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial.js"]},{"type":"character","attributes":{},"value":["tutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-autocompletion"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-autocompletion.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["tutorial-diagnostics"]},{"type":"character","attributes":{},"value":["0.9.1"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/tutorial"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["tutorial-diagnostics.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["slickquiz"]},{"type":"character","attributes":{},"value":["1.5.20"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["htmlwidgets/lib/slickquiz"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["js/slickQuiz.js"]},{"type":"character","attributes":{},"value":["css/slickQuiz.css","css/slickQuizTutorial.css"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["ace"]},{"type":"character","attributes":{},"value":["1.2.6"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/ace"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["ace.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","all_files","package"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["clipboardjs"]},{"type":"character","attributes":{},"value":["1.5.15"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["lib/clipboardjs"]}]},{"type":"NULL","attributes":{},"value":{}},{"type":"character","attributes":{},"value":["clipboard.min.js"]},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"NULL","attributes":{},"value":{}},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["learnr"]}]}]}
+</script>
+<!--/html_preserve-->
+<div id="section-refs" class="references">
+<div id="section-ref-Villegas2018">
+<p>Villegas, Andrés M., Vladimir K. Kaishev, and Pietro Millossovich. 2018. “StMoMo: An R Package for Stochastic Mortality Modeling.” <em>Journal of Statistical Software</em> 84 (3): 1–38. doi:<a href="https://doi.org/10.18637/jss.v084.i03">10.18637/jss.v084.i03</a>.</p>
+</div>
+</div>
+</div>
+
+</div> <!-- topics -->
+
+<div class="topicsContainer">
+<div class="topicsPositioner">
+<div class="band">
+<div class="bandContent topicsListContainer">
+
+<!-- begin doc-metadata -->
+<div id="doc-metadata">
+<h2 class="title toc-ignore" style="display:none;">Stochastic Mortality Models in R</h2>
+</div>
+<!-- end doc-metadata -->
+
+</div> <!-- bandContent.topicsListContainer -->
+</div> <!-- band -->
+</div> <!-- topicsPositioner -->
+</div> <!-- topicsContainer -->
+
+
+</div> <!-- bandContent page -->
+</div> <!-- pageContent band -->
+
+
+
+
+<script>
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+</script>
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+
+</html>
