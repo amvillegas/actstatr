@@ -22,7 +22,7 @@ actstatr is an R package bundling several [learnr](https://rstudio.github.io/lea
 - Survival analysis (`"survival"`): Survival analysis in `R`, including the Kaplan-Meier and Nelson-Aelen estimators, Cox regression models and accelerated failure time models.
 - Markov chains (`"markovchains"`): Application of continuous time Markov chains (MC) in `R` by using the package `markovchain`.
 - Mortality graduation (`"graduation"`): Implementation in `R` of mortality graduation techniques and of statistical tests to assess the adherence of a graduation.
-- Stochastic Mortality Models ("stochasticmortality"):  Implementation in `R` of stochastic mortaity projections models using the package `StMoMo`.
+- Stochastic Mortality Models (`"stochasticmortality"`):  Implementation in `R` of stochastic mortaity projections models using the package `StMoMo`.
 
 # Installation:
 
@@ -41,4 +41,4 @@ To run a tutorial use the following code
     install.packages("learnr")
     learnr::run_tutorial("basicr", package = "actstatr")
 ````
-where the first argument is the name of the tutorial. Available tutorials are: `"basicr"`, `"lifetables"`, `"survival"`, `"markovchains"`, `"graduation"`, `"stochasticmortality`.
+where the first argument is the name of the tutorial. Available tutorials are: `"basicr"`, `"lifetables"`, `"survival"`, `"markovchains"`, `"graduation"`, `"stochasticmortality"`.
