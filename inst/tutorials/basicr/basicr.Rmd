@@ -98,7 +98,7 @@ b <- 4
 c <- a^2 + b^2
 
 c # display the value of c
-c > 10 #checking c < 30
+c < 30 #checking c < 30
 ```
 
 
@@ -219,7 +219,7 @@ vec2[c(2, 4)]
 ```
 
 
-2. Compute the sum of the average of the first five element of  the vector 
+2. Compute the sum of the first five element of  the vector 
 
 ```{r vecex2,exercise=TRUE,exercise.lines=4, exercise.setup = "prepare-vecex"}
 
@@ -254,7 +254,7 @@ sum(vec2[1:5])
 ```
 
 ```{r vecex3-hint-2}
-vec3[vec3<=10]
+vec2[vec2<=10]
 ```
 
 
