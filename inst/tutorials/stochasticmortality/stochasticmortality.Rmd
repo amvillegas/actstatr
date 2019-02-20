@@ -112,7 +112,7 @@ plot(EWMaleData$ages, ix, type = "l", main = "Improvement rates in EW 1990-2010"
 question("Based on the results, which one of the following statements is correct?",
   answer("The mortality improvement is the highest around age 40.",message = "Incorret. The improvement rate is the lowest around age 40."),
   answer("The mortatlity improvement rate is constant across all ages.",message = "Incorret. There is more improvement at around age 20 and ages 60-80."),
-  answer("The highest improvement appears for ages before 20.",correct = TRUE),
+  answer("The highest improvement appears to be the highest for ages before 20.",correct = TRUE),
   allow_retry = TRUE
 )
 ```
