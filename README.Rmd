@@ -30,6 +30,7 @@ To install the latest development version:
 
 ```R
     install.packages("devtools")
+    devtools::install_github("rstudio/learnr")
     devtools::install_github("amvillegas/actstatr")
 ````
 
@@ -38,7 +39,6 @@ To install the latest development version:
 To run a tutorial use the following code
 
 ```R
-    install.packages("learnr")
     learnr::run_tutorial("basicr", package = "actstatr")
 ````
 where the first argument is the name of the tutorial. Available tutorials are: `"basicr"`, `"lifetables"`, `"survival"`, `"markovchains"`, `"graduation"`, `"stochasticmortality"`.

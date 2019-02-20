@@ -19,6 +19,7 @@ To install the latest development version:
 
 ``` r
     install.packages("devtools")
+    devtools::install_github("rstudio/learnr")
     devtools::install_github("amvillegas/actstatr")
 ```
 
@@ -28,7 +29,6 @@ Running a tutorial
 To run a tutorial use the following code
 
 ``` r
-    install.packages("learnr")
     learnr::run_tutorial("basicr", package = "actstatr")
 ```
 
