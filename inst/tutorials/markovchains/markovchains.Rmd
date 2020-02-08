@@ -16,7 +16,7 @@ knitr::opts_knit$set(root.dir = getwd())
 ```
 
 ## Introduction
-
+  
 In this tutorial we aim to discuss the application of continuous time Markov chains (MC) in `R` by using the package **markovchain** [@Spedicato2017].
 
 This tutorial will consist of three parts: Markov chain objects in `R`, properties of a continuous Markov chain, and simulation and parameter estimation of a Markov chain.
@@ -249,7 +249,24 @@ weather_mc <- new("ctmc", states = weather_states,
 
 1. In the long run, what is the proportion of time where the weather in City X is sunny?
 
-```{r mcprop, exercise=TRUE,exercise.lines=2}
+
+```{r weatherSetup, include=FALSE}
+weather_states <- c("S", "R", "C")
+
+weather_tran<- matrix(data = c(
+  -0.1, 0.08, 0.02,
+  0.35, -0.5, 0.15,
+  0.2,0.2,-0.4), 
+  nrow = 3, byrow = TRUE, dimnames = list(weather_states, weather_states))
+
+weather_mc <- new("ctmc", states = weather_states, 
+                 byrow = TRUE, generator = weather_tran, 
+                 name = "Sunny-Cloudy-Rainy")
+```
+
+
+
+```{r mcprop, exercise=TRUE,exercise.lines=2, exercise.setup = "weatherSetup"}
 
 ```
 

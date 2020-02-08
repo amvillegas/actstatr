@@ -317,8 +317,21 @@ weather_mc &lt;- new(&quot;ctmc&quot;, states = weather_states,
 <ol style="list-style-type: decimal">
 <li>In the long run, what is the proportion of time where the weather in City X is sunny?</li>
 </ol>
+<div class="tutorial-exercise-support" data-label="weatherSetup" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
+<pre class="text"><code>weather_states &lt;- c(&quot;S&quot;, &quot;R&quot;, &quot;C&quot;)
+
+weather_tran&lt;- matrix(data = c(
+  -0.1, 0.08, 0.02,
+  0.35, -0.5, 0.15,
+  0.2,0.2,-0.4), 
+  nrow = 3, byrow = TRUE, dimnames = list(weather_states, weather_states))
+
+weather_mc &lt;- new(&quot;ctmc&quot;, states = weather_states, 
+                 byrow = TRUE, generator = weather_tran, 
+                 name = &quot;Sunny-Cloudy-Rainy&quot;)</code></pre>
+</div>
 <div class="tutorial-exercise" data-label="mcprop" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="2">
-<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.timelimit":60,"exercise.checker":"NULL"}</script>
+<script type="application/json" data-opts-chunk="1">{"fig.width":6.5,"fig.height":4,"fig.retina":2,"fig.align":"default","fig.keep":"high","fig.show":"asis","out.width":624,"warning":true,"error":false,"message":true,"exercise.df_print":"paged","exercise.timelimit":60,"exercise.setup":"weatherSetup","exercise.checker":"NULL"}</script>
 </div>
 <div class="tutorial-exercise-support" data-label="mcprop-solution" data-caption="Code" data-completion="1" data-diagnostics="1" data-startover="1" data-lines="0">
 <pre class="text"><code>steadyStates(weather_mc)</code></pre>
@@ -349,28 +362,29 @@ weather_mc &lt;- new(&quot;ctmc&quot;, states = weather_states,
 <p>The <code>rctmc</code> function allows one to simulate MC transitions. Now let’s use the two-state Health-Sick model, and the following <code>R</code> codes will simulate the transition from time 0 to 20. Here one needs to state the MC object in the <code>ctmc</code> argument, and also provide the length of time in the <code>T</code> argument. While the <code>T</code> argument is used, one needs to set <code>n</code> to be <code>Inf</code>. Here, <code>n</code> represents the number of samples to generate.</p>
 <pre class="r"><code>rctmc(n = Inf, ctmc = health_mc, T = 20)</code></pre>
 <pre><code>## [[1]]
-##  [1] &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot;
-## [20] &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot;
+##  [1] &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot;
+## [20] &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot;
 ## 
 ## [[2]]
-##  [1]  0.000000  2.120158  2.180476  2.293866  2.325359  2.781892  2.880565
-##  [8]  3.409367  3.454812  4.012687  4.342412  4.869878  4.877317  5.181808
-## [15]  5.237168  6.811976  7.087378 11.531425 11.557385 11.878329 11.920968
-## [22] 14.890462 14.957114 16.410733 16.635459 17.364387 17.364559 18.273530
-## [29] 18.403374 18.786686 19.051930 19.470140 19.481686 19.802759 19.824497</code></pre>
+##  [1]  0.00000000  0.01342017  0.09216401  0.82472095  1.37151244  1.49690937
+##  [7]  1.82742811  2.38374738  2.72271052  2.84332826  3.39041999  3.41889988
+## [13]  5.43837778  5.50849231  6.21506730  6.22083202  6.46770463  6.49610320
+## [19]  7.22737497  7.23368964  8.02013496  8.23343931  9.60696040  9.70359166
+## [25] 12.21256829 12.24138422 15.13676218 15.26758478 15.43056127 15.47435498
+## [31] 16.27009917 16.36856000 16.66799716 16.81851107 17.39553214 17.57756853</code></pre>
 <p>Alternatively, one can specify the number of transitions (that is, <code>n</code>). In this case, <code>T</code> is no longer required. Furthermore, one can also provide the distribution of the initial states.</p>
 <pre class="r"><code>rctmc(n = 5, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = FALSE)</code></pre>
 <pre><code>## [[1]]
-## [1] &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot;
+## [1] &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot;
 ## 
 ## [[2]]
-## [1] 0.1452139 1.5519588 1.6539635 1.8081630 1.9551513</code></pre>
+## [1] 0.0472524 0.1114997 1.5852668 1.6441199 2.5801560</code></pre>
 <pre class="r"><code>rctmc(n = 5, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = TRUE)</code></pre>
 <pre><code>## [[1]]
 ## [1] &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot; &quot;S&quot; &quot;H&quot;
 ## 
 ## [[2]]
-## [1] 0.0000000 0.1045207 1.9947182 2.0989753 3.1228403 3.1730292</code></pre>
+## [1] 0.00000000 0.01301934 1.19047796 1.25147474 2.40796532 2.48687845</code></pre>
 <p>If we choose <code>include.T0 = FALSE</code>, then the output will start from the first transition (e.g. if the first state is S, then it means at that time there is a transition from H to S); if <code>include.T0 = TRUE</code> is used, then the output will start from time 0 (that is, the output will show the first state at time 0).</p>
 <p>One can plot the simulated MC chain by using the <code>plot</code> function. Given that the states are not numerical, one needs to specify numerical values on the y-axis corresponding to the states. In the following example, we plot H and S states at 2 and 1.</p>
 <pre class="r"><code>health_simu &lt;- rctmc(n = 100, ctmc = health_mc, initDist = c(0.2, 0.8), include.T0 = TRUE)
@@ -397,8 +411,8 @@ health_fit$estimate</code></pre>
 ## 
 ## Slot &quot;generator&quot;:
 ##           H         S
-## H -1.104134  1.104134
-## S  9.391504 -9.391504
+## H -1.271429  1.271429
+## S  8.293485 -8.293485
 ## 
 ## Slot &quot;name&quot;:
 ## [1] &quot;&quot;</code></pre>
@@ -472,7 +486,7 @@ output$`tutorial-exercise-mcintro-output` <- renderUI({
 </script>
  
 <script type="application/shiny-prerendered" data-context="server">
-learnr:::question_prerendered_chunk(structure(list(type = "learnr_radio", label = "mcintro2", question = structure("Which one of the three states is an absorbing state?", html = TRUE, class = c("html", "character")), answers = list(structure(list(id = "lnr_ans_90a4862",     option = "Death", value = "Death", label = structure("Death", html = TRUE, class = c("html",     "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_1c0452d",     option = "Sickness", value = "Sickness", label = structure("Sickness", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("Incorrect. One can move from S to H or D, hence S is not absorbing.", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_c4729a9", option = "Health",     value = "Health", label = structure("Health", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("Incorret. One can move from H to S or D, hence H is not absorbing.", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_ffbec2a", option = "There is no absorbing state.",     value = "There is no absorbing state.", label = structure("There is no absorbing state.", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("Incorret. D is an absorbing state since the transition rate from D to any other state is 0.", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer"))), button_labels = list(submit = structure("Submit Answer", html = TRUE, class = c("html", "character")), try_again = structure("Try Again", html = TRUE, class = c("html", "character"))), messages = list(correct = structure("Correct!", html = TRUE, class = c("html", "character")), try_again = structure("Incorrect", html = TRUE, class = c("html", "character")), incorrect = structure("Incorrect", html = TRUE, class = c("html", "character")), message = NULL, post_message = NULL), ids = list(    answer = "mcintro2-answer", question = "mcintro2"), loading = structure("<strong>Loading:<\u002fstrong> \nWhich one of the three states is an absorbing state?\n<br/><br/><br/>", html = TRUE, class = c("html", "character")), random_answer_order = FALSE, allow_retry = TRUE,     seed = 2046516721.54702, options = list()), class = c("learnr_radio", "tutorial_question")))
+learnr:::question_prerendered_chunk(structure(list(type = "learnr_radio", label = "mcintro2", question = structure("Which one of the three states is an absorbing state?", html = TRUE, class = c("html", "character")), answers = list(structure(list(id = "lnr_ans_33144c2",     option = "Death", value = "Death", label = structure("Death", html = TRUE, class = c("html",     "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_a0bb559",     option = "Sickness", value = "Sickness", label = structure("Sickness", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("Incorrect. One can move from S to H or D, hence S is not absorbing.", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_1589f2e", option = "Health",     value = "Health", label = structure("Health", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("Incorret. One can move from H to S or D, hence H is not absorbing.", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_38ddcb", option = "There is no absorbing state.",     value = "There is no absorbing state.", label = structure("There is no absorbing state.", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("Incorret. D is an absorbing state since the transition rate from D to any other state is 0.", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer"))), button_labels = list(submit = structure("Submit Answer", html = TRUE, class = c("html", "character")), try_again = structure("Try Again", html = TRUE, class = c("html", "character"))), messages = list(correct = structure("Correct!", html = TRUE, class = c("html", "character")), try_again = structure("Incorrect", html = TRUE, class = c("html", "character")), incorrect = structure("Incorrect", html = TRUE, class = c("html", "character")), message = NULL, post_message = NULL), ids = list(    answer = "mcintro2-answer", question = "mcintro2"), loading = structure("<strong>Loading:<\u002fstrong> \nWhich one of the three states is an absorbing state?\n<br/><br/><br/>", html = TRUE, class = c("html", "character")), random_answer_order = FALSE, allow_retry = TRUE,     seed = 1323127912.38387, options = list()), class = c("learnr_radio", "tutorial_question")))
 </script>
  
 <script type="application/shiny-prerendered" data-context="server">
@@ -483,7 +497,7 @@ output$`tutorial-exercise-mcprop-output` <- renderUI({
 </script>
  
 <script type="application/shiny-prerendered" data-context="server">
-learnr:::question_prerendered_chunk(structure(list(type = "learnr_radio", label = "mcprop2", question = structure("Which one of the following statements is correct?", html = TRUE, class = c("html", "character")), answers = list(structure(list(id = "lnr_ans_928c904",     option = "Given that the weather is sunny right now, the probability that it will be sunny for 3 days is 82.68973%",     value = "Given that the weather is sunny right now, the probability that it will be sunny for 3 days is 82.68973%",     label = structure("Given that the weather is sunny right now, the probability that it will be sunny for 3 days is 82.68973%", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("0.8268973 is the probability that the weather will be sunny at exactly day 3 (which includes the events that the weather can experience multiple transitions within the 3 days).", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_a862703", option = "If the weather is rainy right now, then there is a 31.00969% chance that it will be Rainy in 1 day.",     value = "If the weather is rainy right now, then there is a 31.00969% chance that it will be Rainy in 1 day.",     label = structure("If the weather is rainy right now, then there is a 31.00969% chance that it will be Rainy in 1 day.", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("The R codes only compute the probabilities for a 3-day horizon.", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_bc7aa78", option = "If the weather is cloudy, then it is most likely that the weather will be Sunny in 3 days.",     value = "If the weather is cloudy, then it is most likely that the weather will be Sunny in 3 days.",     label = structure("If the weather is cloudy, then it is most likely that the weather will be Sunny in 3 days.", html = TRUE, class = c("html",     "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer", "tutorial_quiz_answer"))), button_labels = list(submit = structure("Submit Answer", html = TRUE, class = c("html", "character")), try_again = structure("Try Again", html = TRUE, class = c("html", "character"))), messages = list(correct = structure("Correct!", html = TRUE, class = c("html", "character")), try_again = structure("Incorrect", html = TRUE, class = c("html", "character")), incorrect = structure("Incorrect", html = TRUE, class = c("html", "character")), message = NULL, post_message = NULL), ids = list(    answer = "mcprop2-answer", question = "mcprop2"), loading = structure("<strong>Loading:<\u002fstrong> \nWhich one of the following statements is correct?\n<br/><br/><br/>", html = TRUE, class = c("html", "character")), random_answer_order = FALSE, allow_retry = TRUE,     seed = 84677457.460569, options = list()), class = c("learnr_radio", "tutorial_question")))
+learnr:::question_prerendered_chunk(structure(list(type = "learnr_radio", label = "mcprop2", question = structure("Which one of the following statements is correct?", html = TRUE, class = c("html", "character")), answers = list(structure(list(id = "lnr_ans_529d15c",     option = "Given that the weather is sunny right now, the probability that it will be sunny for 3 days is 82.68973%",     value = "Given that the weather is sunny right now, the probability that it will be sunny for 3 days is 82.68973%",     label = structure("Given that the weather is sunny right now, the probability that it will be sunny for 3 days is 82.68973%", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("0.8268973 is the probability that the weather will be sunny at exactly day 3 (which includes the events that the weather can experience multiple transitions within the 3 days).", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_b7fb6c3", option = "If the weather is rainy right now, then there is a 31.00969% chance that it will be Rainy in 1 day.",     value = "If the weather is rainy right now, then there is a 31.00969% chance that it will be Rainy in 1 day.",     label = structure("If the weather is rainy right now, then there is a 31.00969% chance that it will be Rainy in 1 day.", html = TRUE, class = c("html",     "character")), correct = FALSE, message = structure("The R codes only compute the probabilities for a 3-day horizon.", html = TRUE, class = c("html",     "character"))), class = c("tutorial_question_answer", "tutorial_quiz_answer")), structure(list(id = "lnr_ans_efbbaf9", option = "If the weather is cloudy, then it is most likely that the weather will be Sunny in 3 days.",     value = "If the weather is cloudy, then it is most likely that the weather will be Sunny in 3 days.",     label = structure("If the weather is cloudy, then it is most likely that the weather will be Sunny in 3 days.", html = TRUE, class = c("html",     "character")), correct = TRUE, message = NULL), class = c("tutorial_question_answer", "tutorial_quiz_answer"))), button_labels = list(submit = structure("Submit Answer", html = TRUE, class = c("html", "character")), try_again = structure("Try Again", html = TRUE, class = c("html", "character"))), messages = list(correct = structure("Correct!", html = TRUE, class = c("html", "character")), try_again = structure("Incorrect", html = TRUE, class = c("html", "character")), incorrect = structure("Incorrect", html = TRUE, class = c("html", "character")), message = NULL, post_message = NULL), ids = list(    answer = "mcprop2-answer", question = "mcprop2"), loading = structure("<strong>Loading:<\u002fstrong> \nWhich one of the following statements is correct?\n<br/><br/><br/>", html = TRUE, class = c("html", "character")), random_answer_order = FALSE, allow_retry = TRUE,     seed = 1696263374.21012, options = list()), class = c("learnr_radio", "tutorial_question")))
 </script>
  
 <script type="application/shiny-prerendered" data-context="server">
