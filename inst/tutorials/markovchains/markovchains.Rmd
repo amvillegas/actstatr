@@ -339,7 +339,23 @@ Note that the data that is provided for the `ctmcFit` should include the initial
 
 Use the `disable_mc` MC object. Simulate the transitions of health-sickness-disability for 100 days. You should use the limiting probabilities as the initial distribution. 
 
-```{r mcsimu, exercise=TRUE,exercise.lines=10}
+
+```{r mcsimuSetup}
+disable_states <- c("Health", "Sick", "Disable") # names of states
+
+disable_tran<- matrix(data = c(
+  -0.01, 0.008, 0.002,
+  0.09, -0.1, 0.01,
+  0.03, 0.02, -0.05), 
+  nrow = 3, byrow = TRUE, dimnames = list(disable_states, disable_states))
+
+disable_mc <- new("ctmc", states = disable_states, 
+                 byrow = TRUE, generator = disable_tran, 
+                 name = "Disability MC")
+```
+
+
+```{r mcsimu, exercise=TRUE,exercise.lines=10, exercise.setup = "mcsimuSetup"}
 # calculate the limiting probabilities
 
 
