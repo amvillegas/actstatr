@@ -1,0 +1,13 @@
+name: stochasticmortality
+title: stochasticmortality
+username:
+account: andres-m-villegas
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5604617
+bundleId: 5555622
+url: https://andres-m-villegas.shinyapps.io/stochasticmortality/
+when: 1644308036.78525
+lastSyncTime: 1644308036.78525
+asMultiple: FALSE
+asStatic: FALSE

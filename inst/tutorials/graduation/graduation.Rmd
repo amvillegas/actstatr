@@ -83,7 +83,7 @@ plot(log(mx), type = 'l' , xlab = "age", ylab = "Central mortality rate (log sca
      main = "Australian Men: 2010-2012")
 ```
 
-Compare these lasts two plots with [Figure 15](http://www.aga.gov.au/publications/life_table_2010-12/06-Part2.asp#P574_39256) and [Figure 16](http://www.aga.gov.au/publications/life_table_2010-12/06-Part2.asp#P586_41264) in the ALT2010-2012 Report.
+Compare these lasts two plots with Figure 15 and Figure 16 in the ALT2010-2012 [Report](https://aga.gov.au/sites/aga.gov.au/files/publications/life_table_2010-12/downloads/Australian_Life_Tables_2010-12_Final_V2.pdf).
 
 ## Graduation - parametric laws
 
@@ -161,9 +161,9 @@ question("Which one of the following statements is correct?",
 
 ```{r gom, echo=FALSE}
 question("Given the results from the Gompertz law fitting, what are the values of $B$ and $C$?",
-  answer("0.00001477166 and 1.10815891153",correct = TRUE),
-  answer("-11.1228 and 0.10274", message = "Incorrect. These are the values for the beta's."),
-  answer("67697.1932906 and 1.10815891153", message = "Incorrect. Note that the sign for beta 0 is negative."),
+  answer("0.00001450525 and 1.108491",correct = TRUE),
+  answer("-11.141 and 0.103", message = "Incorrect. These are the values for the beta's."),
+  answer("68940.56 and 1.108491", message = "Incorrect. Note that the sign for beta 0 is negative."),
   allow_retry = TRUE
 )
 ```
@@ -558,7 +558,7 @@ In the above code, `sum(zx_gompertz > 0)` is counting the number of positive res
 signTest_makeham
 ```
 
-This indicates that we can reject the hypothesis for the Makeham graduation (i.e. right balance of positive and negative signs) at the 5% level of significance but not at the 1% level. However, we know that the Makeham graduation has significant bias at different ages. This highlights one of the weaknesses of this test, namely, that positive signs at some ages can be cancelled out by negative signs at other ages.
+This indicates that we cannot reject the hypothesis for the Makeham graduation (i.e. right balance of positive and negative signs) at the 5% level of significance. However, we know that the Makeham graduation has significant bias at different ages. This highlights one of the weaknesses of this test, namely, that positive signs at some ages can be cancelled out by negative signs at other ages.
 
 The Gompertz graduation fails this test (p-value = `r round(signTest_gompertz$p.value, 2)`).
 

@@ -1,0 +1,13 @@
+name: graduation
+title: graduation
+username:
+account: andres-m-villegas
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5604426
+bundleId: 5555611
+url: https://andres-m-villegas.shinyapps.io/graduation/
+when: 1644307816.02874
+lastSyncTime: 1644307816.02874
+asMultiple: FALSE
+asStatic: FALSE

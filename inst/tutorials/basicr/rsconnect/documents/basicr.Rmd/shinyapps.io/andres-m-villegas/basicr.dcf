@@ -1,0 +1,13 @@
+name: basicr
+title: basicr
+username:
+account: andres-m-villegas
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5604171
+bundleId: 5555349
+url: https://andres-m-villegas.shinyapps.io/basicr/
+when: 1644302061.1065
+lastSyncTime: 1644302061.1065
+asMultiple: FALSE
+asStatic: FALSE

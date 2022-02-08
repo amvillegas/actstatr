@@ -1,0 +1,13 @@
+name: survival
+title: survival
+username:
+account: andres-m-villegas
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5604212
+bundleId: 5555407
+url: https://andres-m-villegas.shinyapps.io/survival/
+when: 1644302852.17014
+lastSyncTime: 1644302852.17014
+asMultiple: FALSE
+asStatic: FALSE

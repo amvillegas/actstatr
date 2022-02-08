@@ -1,0 +1,13 @@
+name: lifetables
+title: lifetables
+username:
+account: andres-m-villegas
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5604188
+bundleId: 5555379
+url: https://andres-m-villegas.shinyapps.io/lifetables/
+when: 1644302491.28638
+lastSyncTime: 1644302491.28638
+asMultiple: FALSE
+asStatic: FALSE
